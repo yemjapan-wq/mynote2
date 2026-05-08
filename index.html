@@ -3,853 +3,676 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>未来ノート - 瞳の儀式</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<title>未来ノート｜瞳が知っている、あなたの物語</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --gold: #d4a017;
-    --gold-glow: #ffcc44;
-    --neon-blue: #00d4ff;
-    --neon-blue-dim: rgba(0,212,255,0.3);
-    --bg-deep: #050810;
-    --bg-mid: #0a0f1e;
-    --bg-card: rgba(10,15,35,0.85);
-    --text-main: #e8e0cc;
-    --text-dim: rgba(232,224,204,0.5);
-    --dwell-dur: 2000ms;
-  }
+:root {
+    --black: #000000;
+    --deep: #050810;
+    --gold: #c9a84c;
+    --gold2: #f0d080;
+    --neon: #00e5ff;
+    --white: #f0ece4;
+    --glow-gold: 0 0 15px rgba(201,168,76,0.5);
+    --glow-neon: 0 0 20px rgba(0,229,255,0.6);
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg-deep);
-    color: var(--text-main);
-    font-family: 'Noto Serif JP', serif;
-    height: 100dvh;
-    overflow: hidden;
-    user-select: none;
-    -webkit-user-select: none;
-  }
+body {
+    background: var(--deep);
+    color: var(--white);
+    font-family: 'Noto Sans JP', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
 
-  /* ─── VIDEO (hidden) ─── */
-  #video {
-    position: fixed;
-    top: -9999px; left: -9999px;
-    width: 1px; height: 1px;
-    opacity: 0;
-  }
+.phase { display: none; }
+.phase.active { display: block; }
 
-  /* ─── GAZE CURSOR ─── */
-  #gaze-cursor {
-    position: fixed;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,212,255,0.9) 0%, rgba(0,212,255,0) 70%);
-    box-shadow: 0 0 8px 2px var(--neon-blue);
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: left 0.06s linear, top 0.06s linear;
-    display: none;
-  }
-  #gaze-cursor.visible { display: block; }
-
-  /* ─── MAIN WRAPPER ─── */
-  #app {
-    position: fixed;
-    inset: 0;
+/* ─── LP ─── */
+#phase-landing {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-  }
-
-  /* ─── BACKGROUND RUNE ─── */
-  .bg-rune {
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0,80,150,0.18) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(150,80,0,0.12) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .bg-rune::before {
+    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
+}
+#phase-landing::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,212,255,0.03) 40px, rgba(0,212,255,0.03) 41px),
-      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,212,255,0.03) 40px, rgba(0,212,255,0.03) 41px);
-  }
-
-  /* ─── PHASE SCREENS ─── */
-  .phase {
-    position: fixed;
-    inset: 0;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    padding: 16px;
-    gap: 0;
-  }
-  .phase.active { display: flex; }
-
-  /* ─── PHASE 0: LANDING ─── */
-  #phase-0 { gap: 24px; }
-  .phase-0-title {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(1.2rem, 5vw, 2rem);
-    color: var(--gold);
-    text-shadow: 0 0 20px rgba(212,160,23,0.6), 0 0 40px rgba(212,160,23,0.3);
-    text-align: center;
-    letter-spacing: 0.05em;
-    line-height: 1.4;
-  }
-  .phase-0-sub {
-    font-size: clamp(0.75rem, 3vw, 0.95rem);
-    color: var(--text-dim);
-    text-align: center;
-    line-height: 1.8;
-    max-width: 320px;
-  }
-  .orb-btn {
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    border: 2px solid var(--gold);
-    background: radial-gradient(circle, rgba(212,160,23,0.2) 0%, rgba(212,160,23,0.05) 60%, transparent 100%);
-    box-shadow: 0 0 30px rgba(212,160,23,0.4), inset 0 0 20px rgba(212,160,23,0.1);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 4px;
-    transition: all 0.3s;
-    animation: orb-pulse 3s ease-in-out infinite;
-  }
-  .orb-btn:hover, .orb-btn:active {
-    box-shadow: 0 0 60px rgba(212,160,23,0.8), inset 0 0 30px rgba(212,160,23,0.3);
-    transform: scale(1.08);
-  }
-  .orb-btn span { font-size: 0.65rem; color: var(--gold); letter-spacing: 0.1em; }
-  @keyframes orb-pulse {
-    0%,100% { box-shadow: 0 0 30px rgba(212,160,23,0.4), inset 0 0 20px rgba(212,160,23,0.1); }
-    50%      { box-shadow: 0 0 50px rgba(212,160,23,0.6), inset 0 0 30px rgba(212,160,23,0.2); }
-  }
-  .cam-note {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    text-align: center;
-    max-width: 280px;
-    line-height: 1.6;
-  }
-
-  /* ─── PHASE 1–3: RITUAL ─── */
-  #phase-ritual { gap: 12px; }
-
-  .ritual-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-  }
-  .ritual-step-indicator {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 4px;
-  }
-  .step-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    border: 1px solid var(--gold);
-    background: transparent;
-    transition: all 0.4s;
-  }
-  .step-dot.done { background: var(--gold); }
-  .step-dot.active { background: var(--gold-glow); box-shadow: 0 0 8px var(--gold-glow); }
-
-  .ritual-question {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(0.85rem, 3.5vw, 1.1rem);
-    color: var(--gold);
-    text-shadow: 0 0 10px rgba(212,160,23,0.5);
-    text-align: center;
-    letter-spacing: 0.08em;
-  }
-  .ritual-hint {
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    letter-spacing: 0.05em;
-  }
-
-  /* ─── GRID ─── */
-  .gaze-grid {
-    display: grid;
-    gap: 10px;
-    width: 100%;
-    max-width: 380px;
-    padding: 0 8px;
-  }
-  .gaze-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-  .gaze-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
-  .gaze-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
-  .gaze-grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
-
-  /* ─── GAZE TARGET ─── */
-  .gaze-target {
-    position: relative;
-    background: var(--bg-card);
-    border: 1px solid rgba(0,212,255,0.2);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
-    color: var(--text-main);
-    cursor: default;
-    overflow: hidden;
-    transition: border-color 0.2s, color 0.2s;
-    min-height: 52px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .gaze-target.small-num {
-    font-size: clamp(0.75rem, 3vw, 0.95rem);
-    padding: 8px 4px;
-    min-height: 44px;
-    border-radius: 8px;
-  }
-
-  /* dwell progress ring */
-  .gaze-target .ring {
-    position: absolute;
-    inset: -3px;
-    border-radius: 12px;
-    border: 2px solid transparent;
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.08) 0%, transparent 70%);
     pointer-events: none;
-  }
-  .gaze-target.dwelling {
-    border-color: var(--gold);
-    color: var(--gold-glow);
-    text-shadow: 0 0 12px var(--gold-glow);
-    box-shadow: 0 0 20px rgba(212,160,23,0.35), inset 0 0 15px rgba(212,160,23,0.1);
-    z-index: 2;
-    animation: dwell-glow var(--dwell-dur) linear forwards;
-  }
-  @keyframes dwell-glow {
-    0%   { transform: scale(1);    box-shadow: 0 0 10px rgba(212,160,23,0.2); }
-    50%  { transform: scale(1.05); box-shadow: 0 0 30px rgba(212,160,23,0.5); }
-    100% { transform: scale(1.1);  box-shadow: 0 0 50px rgba(255,204,68,0.8), inset 0 0 20px rgba(212,160,23,0.4); }
-  }
-  .gaze-target.selected {
-    background: linear-gradient(135deg, rgba(212,160,23,0.3), rgba(212,160,23,0.1));
-    border-color: var(--gold);
-    color: var(--gold-glow);
-    text-shadow: 0 0 20px var(--gold-glow);
-    box-shadow: 0 0 40px rgba(212,160,23,0.6);
-    transform: scale(1.1);
-    z-index: 3;
-  }
-  .dwell-bar {
+}
+.lp-deco {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.3);
+    letter-spacing: 0.2em;
+    margin-bottom: 30px;
+}
+.lp-eyecatch {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--gold2);
+    text-align: center;
+    line-height: 1.5;
+    text-shadow: var(--glow-gold);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+}
+.lp-sub {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.85rem;
+    color: rgba(240,208,128,0.6);
+    letter-spacing: 0.3em;
+    text-align: center;
+    margin-bottom: 60px;
+}
+.lp-divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    margin: 0 auto 60px;
+}
+.lp-copy {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    line-height: 2.8;
+    color: var(--white);
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto 60px;
+}
+.lp-copy em { color: var(--gold2); font-style: normal; }
+.btn-scan {
+    display: block;
+    margin: 0 auto;
+    padding: 18px 48px;
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.4em;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.4s ease;
+}
+.btn-scan::before, .btn-scan::after {
+    content: '';
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-    background: transparent;
-    overflow: hidden;
-    border-radius: 0 0 10px 10px;
-  }
-  .dwell-fill {
+    width: 8px; height: 8px;
+    border-color: var(--gold2);
+    border-style: solid;
+    transition: all 0.3s ease;
+}
+.btn-scan::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.btn-scan::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+.btn-scan:hover { background: rgba(201,168,76,0.08); box-shadow: var(--glow-gold); color: var(--gold2); }
+.lp-warn {
+    margin-top: 24px;
+    font-size: 0.7rem;
+    color: rgba(240,236,228,0.3);
+    text-align: center;
+    letter-spacing: 0.1em;
+}
+
+/* ─── スキャナー ─── */
+#scanner-viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+}
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+#iris-canvas { position: absolute; inset: 0; pointer-events: none; }
+#scan-hud { position: absolute; inset: 0; pointer-events: none; }
+.hud-corner { position: absolute; width: 24px; height: 24px; border-color: rgba(201,168,76,0.5); border-style: solid; }
+.hud-corner.tl { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
+.hud-corner.tr { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
+.hud-corner.bl { bottom: 80px; left: 24px; border-width: 0 0 1px 1px; }
+.hud-corner.br { bottom: 80px; right: 24px; border-width: 0 1px 1px 0; }
+#progress-wrap { position: absolute; bottom: 32px; width: 80%; left: 10%; }
+#progress-track { height: 1px; background: rgba(201,168,76,0.2); }
+#progress-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--gold), var(--gold-glow));
-    box-shadow: 0 0 6px var(--gold-glow);
-    transition: width 0.05s linear;
-  }
-
-  /* ─── SELECTED BADGES ─── */
-  .selected-summary {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .badge {
-    padding: 4px 14px;
-    border: 1px solid var(--gold);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    color: var(--gold);
-    background: rgba(212,160,23,0.08);
-    letter-spacing: 0.08em;
-  }
-
-  /* ─── PHASE 4: RESULT ─── */
-  #phase-result { gap: 20px; }
-  .result-sigil {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(2rem, 10vw, 3.5rem);
-    color: var(--gold);
-    text-shadow: 0 0 30px rgba(212,160,23,0.8), 0 0 60px rgba(212,160,23,0.4);
-    animation: result-appear 1s ease-out forwards;
-  }
-  .result-date {
-    font-size: clamp(1rem, 4vw, 1.4rem);
-    color: var(--text-main);
-    letter-spacing: 0.2em;
-  }
-  .result-text {
-    font-size: clamp(0.8rem, 3vw, 0.95rem);
-    color: var(--text-dim);
-    text-align: center;
-    max-width: 300px;
-    line-height: 2;
-  }
-  .result-glow-ring {
-    width: 160px; height: 160px;
-    border-radius: 50%;
-    border: 2px solid var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 4px;
-    box-shadow: 0 0 40px rgba(212,160,23,0.4), inset 0 0 30px rgba(212,160,23,0.1);
-    animation: ring-spin-glow 6s linear infinite;
+    background: linear-gradient(to right, var(--gold), var(--gold2));
+    transition: width 0.3s ease;
     position: relative;
-  }
-  .result-glow-ring::before {
+}
+#progress-fill::after {
     content: '';
     position: absolute;
-    inset: 8px;
+    right: 0; top: -3px;
+    width: 6px; height: 6px;
     border-radius: 50%;
-    border: 1px solid rgba(0,212,255,0.3);
-    animation: ring-spin-glow 4s linear infinite reverse;
-  }
-  @keyframes ring-spin-glow {
-    0%   { box-shadow: 0 0 40px rgba(212,160,23,0.4), 0 0 80px rgba(212,160,23,0.1); }
-    50%  { box-shadow: 0 0 60px rgba(212,160,23,0.6), 0 0 100px rgba(212,160,23,0.2); }
-    100% { box-shadow: 0 0 40px rgba(212,160,23,0.4), 0 0 80px rgba(212,160,23,0.1); }
-  }
-  @keyframes result-appear {
-    from { opacity: 0; transform: scale(0.5); filter: blur(10px); }
-    to   { opacity: 1; transform: scale(1); filter: blur(0); }
-  }
-  .retry-btn {
-    padding: 10px 30px;
-    border: 1px solid var(--neon-blue);
-    background: transparent;
-    color: var(--neon-blue);
-    border-radius: 30px;
-    font-family: 'Noto Serif JP', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    box-shadow: 0 0 15px var(--neon-blue-dim);
-    transition: all 0.3s;
-    margin-top: 8px;
-  }
-  .retry-btn:hover {
-    box-shadow: 0 0 30px var(--neon-blue);
-    background: var(--neon-blue-dim);
-  }
-
-  /* ─── STATUS BAR ─── */
-  #status-bar {
-    position: fixed;
-    top: 12px; left: 0; right: 0;
-    text-align: center;
+    background: var(--gold2);
+    box-shadow: var(--glow-gold);
+}
+#progress-label {
+    font-family: 'Share Tech Mono', monospace;
     font-size: 0.65rem;
-    color: var(--text-dim);
-    letter-spacing: 0.08em;
-    z-index: 100;
-    pointer-events: none;
-  }
-  #status-bar span {
-    padding: 3px 12px;
-    background: rgba(5,8,16,0.8);
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
+    color: var(--gold);
+    margin-top: 10px;
+    text-align: center;
+    letter-spacing: 0.2em;
+}
 
-  /* ─── CURSOR TOGGLE ─── */
-  #cursor-toggle {
-    position: fixed;
-    bottom: 16px; right: 16px;
-    z-index: 200;
-    padding: 6px 12px;
-    border: 1px solid rgba(0,212,255,0.3);
-    background: rgba(5,8,16,0.8);
-    color: var(--neon-blue);
-    border-radius: 20px;
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    display: none;
-  }
-  #cursor-toggle.visible { display: block; }
-
-  /* ─── TRANSITION ─── */
-  .phase-enter {
-    animation: phase-in 0.5s ease-out forwards;
-  }
-  @keyframes phase-in {
-    from { opacity: 0; transform: translateY(20px); filter: blur(6px); }
-    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-
-  /* ─── LOADING OVERLAY ─── */
-  #loading {
+/* ─── 儀式オーバーレイ ─── */
+/* ★ fixed + overflow-y:auto で31個全部表示 */
+#ritual-overlay {
     position: fixed;
     inset: 0;
-    background: var(--bg-deep);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px 12px 24px;
+    background: rgba(0,0,0,0.88);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+#ritual-overlay.active { opacity: 1; pointer-events: all; }
+
+.ritual-title {
+    font-family: 'Shippori Mincho', serif;
+    color: var(--gold2);
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+    text-align: center;
+    margin-bottom: 14px;
+    text-shadow: var(--glow-gold);
+    line-height: 1.8;
+    flex-shrink: 0;
+}
+
+/* ドウェル進捗テキスト */
+#dwell-indicator {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--neon);
+    letter-spacing: 0.25em;
+    text-align: center;
+    margin-bottom: 14px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+#dwell-indicator.active { opacity: 1; }
+
+/* 視線グリッド共通 */
+.gaze-grid {
+    display: grid;
+    gap: 8px;
+    width: 94%;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.grid-blood {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 200px;
+    gap: 14px;
+}
+.grid-month {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 300px;
+}
+/* ★ 日付：7列 × 5行 = 35マス（31個+空4） */
+.grid-day {
+    grid-template-columns: repeat(7, 1fr);
+    max-width: 360px;
+    gap: 5px;
+}
+
+.gaze-target {
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgba(201,168,76,0.25);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 500;
-    transition: opacity 0.5s;
-  }
-  #loading.hidden { opacity: 0; pointer-events: none; }
-  .load-ring {
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    border-top-color: var(--gold);
-    border-right-color: var(--neon-blue);
-    animation: spin 1.2s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .load-text {
+    color: var(--gold);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.95rem;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    background: rgba(201,168,76,0.03);
+    user-select: none;
+}
+.grid-blood .gaze-target { font-size: 1.4rem; }
+.grid-month .gaze-target { font-size: 0.9rem; }
+.grid-day   .gaze-target { font-size: 0.75rem; }
+
+.gaze-target.highlight {
+    border-color: var(--neon);
+    color: var(--white);
+    box-shadow: 0 0 14px rgba(0,229,255,0.5);
+    transform: scale(1.1);
+    background: rgba(0,229,255,0.08);
+    z-index: 10;
+}
+
+/* ドウェルプログレスバー（セル下端） */
+.progress-fill-ring {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--neon);
+    transform-origin: left;
+    transform: scaleX(0);
+    box-shadow: var(--glow-neon);
+}
+
+/* ─── ローディング ─── */
+#phase-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--deep);
+}
+.loading-text {
+    font-family: 'Share Tech Mono', monospace;
     font-size: 0.7rem;
-    color: var(--text-dim);
-    letter-spacing: 0.15em;
-    animation: blink 1.5s ease-in-out infinite;
-  }
-  @keyframes blink { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    color: var(--gold);
+    letter-spacing: 0.3em;
+    animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+/* ─── 結果 ─── */
+#phase-result { min-height: 100vh; background: var(--deep); }
+#result-inner { padding: 60px 28px 80px; max-width: 480px; margin: 0 auto; }
+.result-header {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.4);
+    letter-spacing: 0.3em;
+    text-align: center;
+    margin-bottom: 40px;
+}
+.result-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.6rem;
+    color: var(--gold2);
+    text-align: center;
+    line-height: 1.6;
+    text-shadow: var(--glow-gold);
+    margin-bottom: 12px;
+}
+.result-identity {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: rgba(0,229,255,0.6);
+    text-align: center;
+    letter-spacing: 0.2em;
+    margin-bottom: 40px;
+}
+.result-divider {
+    width: 40px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 0 auto 40px;
+}
+.result-story {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    line-height: 3;
+    color: var(--white);
+    border-left: 1px solid rgba(201,168,76,0.2);
+    padding-left: 20px;
+}
+.result-story em { color: var(--gold2); font-style: normal; }
+
+/* ─── エラー ─── */
+#error-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(200,50,50,0.9);
+    color: #fff;
+    padding: 12px 24px;
+    font-size: 0.8rem;
+    border-radius: 2px;
+    z-index: 999;
+    text-align: center;
+    max-width: 90vw;
+}
 </style>
 </head>
 <body>
-
-<!-- Loading Overlay -->
-<div id="loading">
-  <div class="load-ring"></div>
-  <div class="load-text">魔道書を開く…</div>
-</div>
-
-<!-- Hidden video for MediaPipe -->
-<video id="video" playsinline muted></video>
-
-<!-- Gaze cursor -->
-<div id="gaze-cursor"></div>
-
-<!-- Cursor toggle -->
-<button id="cursor-toggle" onclick="toggleCursor()">👁 視線表示</button>
-
-<!-- Status bar -->
-<div id="status-bar"><span id="status-text">初期化中…</span></div>
-
-<!-- Background -->
-<div class="bg-rune"></div>
-
-<!-- APP -->
 <div id="app">
 
-  <!-- PHASE 0: Landing -->
-  <div id="phase-0" class="phase active">
-    <div class="phase-0-title">瞳の儀式<br><span style="font-size:0.6em;opacity:0.7">The Iris Oracle</span></div>
-    <div class="phase-0-sub">あなたの虹彩が、運命の扉を開く。<br>カメラを許可し、儀式を始めよ。</div>
-    <button class="orb-btn" onclick="startRitual()">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <circle cx="18" cy="18" r="10" stroke="#d4a017" stroke-width="1.5"/>
-        <circle cx="18" cy="18" r="5" fill="#d4a017" opacity="0.6"/>
-        <circle cx="18" cy="18" r="2" fill="#d4a017"/>
-        <circle cx="14" cy="15" r="1.5" fill="rgba(255,255,255,0.5)"/>
-      </svg>
-      <span>開眼</span>
-    </button>
-    <div class="cam-note">カメラへのアクセスが必要です。<br>視線データは端末外に送信されません。</div>
-  </div>
-
-  <!-- PHASE RITUAL -->
-  <div id="phase-ritual" class="phase">
-    <div class="ritual-header">
-      <div class="ritual-step-indicator">
-        <div class="step-dot" id="dot-0"></div>
-        <div class="step-dot" id="dot-1"></div>
-        <div class="step-dot" id="dot-2"></div>
-      </div>
-      <div class="ritual-question" id="ritual-q">血の型を示せ</div>
-      <div class="ritual-hint" id="ritual-hint">2秒間、文字を見つめると選択される</div>
+    <!-- LP -->
+    <div id="phase-landing" class="phase active">
+        <p class="lp-deco">IRIS RESONANCE SYSTEM v2.1</p>
+        <h1 class="lp-eyecatch">未来ノート</h1>
+        <p class="lp-sub">瞳が知っている、あなたの物語</p>
+        <div class="lp-divider"></div>
+        <p class="lp-copy">
+            生まれた日。<br>刻まれた血。<br>
+            <em>あなたの瞳の奥に、</em><br>
+            すでにすべての答えがある。<br>
+            本当の物語を知る<em>勇気</em>がありますか？
+        </p>
+        <button class="btn-scan" id="start-btn">瞳をスキャンする</button>
+        <p class="lp-warn">※ カメラへのアクセスが必要です。映像は外部に送信されません。</p>
     </div>
 
-    <div class="selected-summary" id="selected-summary"></div>
-
-    <div class="gaze-grid cols-2" id="gaze-grid"></div>
-  </div>
-
-  <!-- PHASE 4: Result -->
-  <div id="phase-result" class="phase">
-    <div class="result-glow-ring">
-      <div class="result-sigil" id="res-blood">A</div>
-      <div class="result-date" id="res-date">1/1</div>
+    <!-- スキャナー -->
+    <div id="phase-scanner" class="phase">
+        <div id="scanner-viewport">
+            <video id="video" playsinline autoplay muted></video>
+            <canvas id="iris-canvas"></canvas>
+            <div id="scan-hud">
+                <div class="hud-corner tl"></div>
+                <div class="hud-corner tr"></div>
+                <div class="hud-corner bl"></div>
+                <div class="hud-corner br"></div>
+            </div>
+            <div id="progress-wrap">
+                <div id="progress-track"><div id="progress-fill"></div></div>
+                <p id="progress-label">INITIALIZING...</p>
+            </div>
+        </div>
+        <!-- fixed配置の儀式オーバーレイ -->
+        <div id="ritual-overlay">
+            <h2 id="ritual-instruction" class="ritual-title"></h2>
+            <div id="dwell-indicator">● LOCKING...</div>
+            <div id="ritual-container" class="gaze-grid"></div>
+        </div>
     </div>
-    <div class="result-text" id="res-desc">運命の刻印が刻まれた。</div>
-    <button class="retry-btn" onclick="resetAll()">儀式をやり直す</button>
-  </div>
 
+    <!-- ローディング -->
+    <div id="phase-loading" class="phase">
+        <p class="loading-text">ANALYZING YOUR FATE...</p>
+    </div>
+
+    <!-- 結果 -->
+    <div id="phase-result" class="phase">
+        <div id="result-inner"></div>
+    </div>
 </div>
 
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+<div id="error-banner"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script>
-'use strict';
+/* ════ 定数 ════ */
+const DWELL_TIME   = 3000;  // ★ 3秒（元2秒から変更）
+const GRACE_PERIOD = 500;   // ★ 視線が外れてからリセットまでの猶予ms
+const SCAN_START   = 30;
 
-// ─────────────────────────────
-//  STATE
-// ─────────────────────────────
-const STEPS = [
-  { q: '血の型を示せ', hint: '血液型を選べ', cols: 'cols-2', items: ['A', 'B', 'O', 'AB'], small: false },
-  { q: '生まれし月を示せ', hint: '誕生月を選べ', cols: 'cols-3', items: ['1','2','3','4','5','6','7','8','9','10','11','12'], small: false },
-  { q: '生まれし日を示せ', hint: '1〜10 / 11〜20 / 21〜31 の順に並ぶ', cols: 'cols-5', items: Array.from({length:31}, (_,i)=>`${i+1}`), small: true }
-];
+const GOLD = '#c9a84c';
+const NEON = '#00e5ff';
 
-let currentStep = 0;
-let selections = [];
-let dwellTarget = null;
-let dwellStart = null;
-let dwellTimer = null;
-let gazeX = -999, gazeY = -999;
-let faceMeshReady = false;
-let showCursor = false;
-let rafId = null;
+/* ════ 状態 ════ */
+const state = {
+    phase: 'landing',
+    ritualStep: null,
+    currentTarget: null,
+    gazeStartTime: 0,
+    gazeLeaveTime: 0,   // ★ 視線が外れた時刻
+    scanProgress: 0,
+    results: { blood: '', month: '', day: '' }
+};
 
-const DWELL_MS = 2000;
-const MARGIN = 40; // hit test margin px
+const STEPS = ['blood', 'month', 'day'];
 
-// ─────────────────────────────
-//  DOM refs
-// ─────────────────────────────
-const gazeCursor   = document.getElementById('gaze-cursor');
-const statusText   = document.getElementById('status-text');
-const loading      = document.getElementById('loading');
-const cursorToggle = document.getElementById('cursor-toggle');
-const video        = document.getElementById('video');
+const DATA = {
+    blood: ['A', 'B', 'O', 'AB'],
+    month: Array.from({ length: 12 }, (_, i) => String(i + 1)),
+    day:   Array.from({ length: 31 }, (_, i) => String(i + 1))
+};
 
-// ─────────────────────────────
-//  UTILS
-// ─────────────────────────────
-function setStatus(msg) { statusText.textContent = msg; }
+const LABELS = {
+    blood: 'あなたの「血液型」を\n見つめてください',
+    month: 'あなたの「誕生月」を\n見つめてください',
+    day:   'あなたの「誕生日」を\n見つめてください'
+};
 
+/* ════ DOM ════ */
+const video           = document.getElementById('video');
+const canvas          = document.getElementById('iris-canvas');
+const ctx             = canvas.getContext('2d');
+const progressFill    = document.getElementById('progress-fill');
+const progressLabel   = document.getElementById('progress-label');
+const ritualOverlay   = document.getElementById('ritual-overlay');
+const ritualInst      = document.getElementById('ritual-instruction');
+const ritualContainer = document.getElementById('ritual-container');
+const dwellInd        = document.getElementById('dwell-indicator');
+
+/* ════ フェーズ切替 ════ */
 function showPhase(id) {
-  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
-  const el = document.getElementById(id);
-  el.classList.add('active', 'phase-enter');
-  setTimeout(() => el.classList.remove('phase-enter'), 600);
+    document.querySelectorAll('.phase').forEach(el => el.classList.remove('active'));
+    document.getElementById('phase-' + id).classList.add('active');
 }
 
-function toggleCursor() {
-  showCursor = !showCursor;
-  gazeCursor.classList.toggle('visible', showCursor);
-  cursorToggle.textContent = showCursor ? '👁 視線非表示' : '👁 視線表示';
-}
-
-// ─────────────────────────────
-//  BUILD GRID
-// ─────────────────────────────
-function buildGrid(step) {
-  const cfg = STEPS[step];
-  const grid = document.getElementById('gaze-grid');
-  grid.className = `gaze-grid ${cfg.cols}`;
-  grid.innerHTML = '';
-  cfg.items.forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'gaze-target' + (cfg.small ? ' small-num' : '');
-    el.dataset.value = item;
-    el.textContent = item;
-    // dwell bar
-    const bar = document.createElement('div');
-    bar.className = 'dwell-bar';
-    const fill = document.createElement('div');
-    fill.className = 'dwell-fill';
-    bar.appendChild(fill);
-    el.appendChild(bar);
-    grid.appendChild(el);
-  });
-}
-
-function updateStepDots(step) {
-  for (let i = 0; i < 3; i++) {
-    const dot = document.getElementById(`dot-${i}`);
-    dot.classList.remove('done','active');
-    if (i < step) dot.classList.add('done');
-    else if (i === step) dot.classList.add('active');
-  }
-}
-
-function updateSummary() {
-  const el = document.getElementById('selected-summary');
-  const labels = ['血液型','月','日'];
-  el.innerHTML = selections.map((v,i) => `<div class="badge">${labels[i]}: ${v}</div>`).join('');
-}
-
-function advanceRitual(value) {
-  selections[currentStep] = value;
-  updateSummary();
-  currentStep++;
-
-  if (currentStep >= 3) {
-    showResult();
-    return;
-  }
-  updateStepDots(currentStep);
-  document.getElementById('ritual-q').textContent    = STEPS[currentStep].q;
-  document.getElementById('ritual-hint').textContent = STEPS[currentStep].hint;
-  buildGrid(currentStep);
-  setStatus(`ステップ ${currentStep+1}/3`);
-}
-
-// ─────────────────────────────
-//  RESULT
-// ─────────────────────────────
-function showResult() {
-  showPhase('phase-result');
-  cursorToggle.classList.remove('visible');
-  document.getElementById('res-blood').textContent = selections[0];
-  document.getElementById('res-date').textContent  = `${selections[1]}月 ${selections[2]}日`;
-  document.getElementById('res-desc').textContent  = destiny(selections[0], +selections[1], +selections[2]);
-  setStatus('儀式完了');
-}
-
-function destiny(blood, month, day) {
-  // Simple deterministic flavour text
-  const n = (blood.charCodeAt(0) + month * 3 + day) % 6;
-  const texts = [
-    '星の導きに従い、あなたの魂は深淵より呼び起こされた。',
-    '血と月日が交差する点に、隠された運命の鍵がある。',
-    '宇宙の意志はあなたを選んだ。扉を開ける時は今だ。',
-    '古の魔道書にこの刻印は記されていた。覚醒は近い。',
-    '虹彩が映し出したのは、前世から続く使命の残像だ。',
-    '光と影が織り成す運命。あなたの選択が歴史を変える。',
-  ];
-  return texts[n];
-}
-
-// ─────────────────────────────
-//  RESET
-// ─────────────────────────────
-function resetAll() {
-  selections = [];
-  currentStep = 0;
-  clearDwell();
-  updateStepDots(0);
-  document.getElementById('ritual-q').textContent    = STEPS[0].q;
-  document.getElementById('ritual-hint').textContent = STEPS[0].hint;
-  document.getElementById('selected-summary').innerHTML = '';
-  buildGrid(0);
-  showPhase('phase-ritual');
-  setStatus('視線を合わせてください');
-  cursorToggle.classList.add('visible');
-}
-
-// ─────────────────────────────
-//  START RITUAL (camera init)
-// ─────────────────────────────
-function startRitual() {
-  showPhase('phase-ritual');
-  buildGrid(0);
-  updateStepDots(0);
-  cursorToggle.classList.add('visible');
-  setStatus('カメラを起動中…');
-  initCamera();
-}
-
-// ─────────────────────────────
-//  CAMERA & MEDIAPIPE
-// ─────────────────────────────
-function initCamera() {
-  const faceMesh = new FaceMesh({
-    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${f}`
-  });
-
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,   // enables iris landmarks 468–477
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  });
-
-  faceMesh.onResults(onResults);
-
-  const camera = new Camera(video, {
-    onFrame: async () => { await faceMesh.send({ image: video }); },
-    width: 640, height: 480
-  });
-
-  camera.start()
-    .then(() => {
-      loading.classList.add('hidden');
-      faceMeshReady = true;
-      setStatus('視線を合わせてください');
-      startGazeLoop();
-    })
-    .catch(err => {
-      loading.classList.add('hidden');
-      setStatus('カメラ拒否 — タップで選択モードに切替');
-      enableTapFallback();
-    });
-}
-
-// ─────────────────────────────
-//  MEDIAPIPE CALLBACK
-// ─────────────────────────────
-function onResults(results) {
-  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-    setStatus('顔が検出されません');
-    gazeX = -999; gazeY = -999;
-    return;
-  }
-
-  const lm = results.multiFaceLandmarks[0];
-
-  // Use average of both iris centers (468=right, 473=left)
-  // Note: MediaPipe x is mirrored relative to display when camera is front-facing
-  const irisR = lm[468];
-  const irisL = lm[473];
-  const avgX = (irisR.x + irisL.x) / 2;
-  const avgY = (irisR.y + irisL.y) / 2;
-
-  // Map: x is flipped (front camera mirror)
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  gazeX = (1 - avgX) * W;
-  gazeY = avgY * H;
-
-  setStatus('追跡中');
-}
-
-// ─────────────────────────────
-//  GAZE LOOP (rAF)
-// ─────────────────────────────
-function startGazeLoop() {
-  function loop() {
-    rafId = requestAnimationFrame(loop);
-    processGaze();
-  }
-  loop();
-}
-
-function processGaze() {
-  // Move cursor
-  if (showCursor) {
-    gazeCursor.style.left = gazeX + 'px';
-    gazeCursor.style.top  = gazeY + 'px';
-  }
-
-  // Only in ritual phase
-  if (!document.getElementById('phase-ritual').classList.contains('active')) return;
-
-  // Hit test
-  const targets = document.querySelectorAll('.gaze-target');
-  let hitTarget = null;
-
-  if (gazeX > 0 && gazeY > 0) {
-    for (const t of targets) {
-      const rect = t.getBoundingClientRect();
-      if (
-        gazeX >= rect.left - MARGIN &&
-        gazeX <= rect.right + MARGIN &&
-        gazeY >= rect.top - MARGIN &&
-        gazeY <= rect.bottom + MARGIN
-      ) {
-        hitTarget = t;
-        break;
-      }
+/* ════ カメラ ════ */
+document.getElementById('start-btn').addEventListener('click', async () => {
+    showPhase('scanner');
+    state.phase = 'scanning';
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        video.srcObject = stream;
+        await new Promise(res => { video.onloadedmetadata = res; });
+        video.play();
+        runFaceMesh();
+    } catch (e) {
+        const b = document.getElementById('error-banner');
+        b.textContent = 'カメラへのアクセスを許可してください';
+        b.style.display = 'block';
+        setTimeout(() => { b.style.display = 'none'; }, 4000);
+        showPhase('landing');
+        state.phase = 'landing';
     }
-  }
-
-  if (hitTarget) {
-    if (hitTarget !== dwellTarget) {
-      // New target — reset
-      clearDwell();
-      dwellTarget = hitTarget;
-      dwellStart  = performance.now();
-      hitTarget.classList.add('dwelling');
-    } else {
-      // Same target — update progress
-      const elapsed = performance.now() - dwellStart;
-      const pct = Math.min((elapsed / DWELL_MS) * 100, 100);
-      const fill = hitTarget.querySelector('.dwell-fill');
-      if (fill) fill.style.width = pct + '%';
-
-      if (elapsed >= DWELL_MS) {
-        // SELECTED
-        hitTarget.classList.remove('dwelling');
-        hitTarget.classList.add('selected');
-        const value = hitTarget.dataset.value;
-        clearDwell();
-        setTimeout(() => advanceRitual(value), 300);
-      }
-    }
-  } else {
-    clearDwell();
-  }
-}
-
-function clearDwell() {
-  if (dwellTarget) {
-    dwellTarget.classList.remove('dwelling');
-    const fill = dwellTarget.querySelector('.dwell-fill');
-    if (fill) fill.style.width = '0%';
-  }
-  dwellTarget = null;
-  dwellStart  = null;
-}
-
-// ─────────────────────────────
-//  TAP FALLBACK (no camera)
-// ─────────────────────────────
-function enableTapFallback() {
-  document.getElementById('phase-ritual').addEventListener('click', e => {
-    const t = e.target.closest('.gaze-target');
-    if (t && !t.classList.contains('selected')) {
-      t.classList.add('selected');
-      advanceRitual(t.dataset.value);
-    }
-  });
-  setStatus('タップで選択モード');
-}
-
-// ─────────────────────────────
-//  INIT
-// ─────────────────────────────
-window.addEventListener('load', () => {
-  // Hide loading if MediaPipe scripts fail to load
-  setTimeout(() => {
-    if (typeof FaceMesh === 'undefined') {
-      loading.classList.add('hidden');
-      setStatus('MediaPipe未ロード — タップ選択モード');
-      document.getElementById('phase-0').querySelector('.cam-note').textContent =
-        'MediaPipeのロードに失敗しました。タップで儀式を行います。';
-      // patch startRitual
-      window.startRitual = function() {
-        showPhase('phase-ritual');
-        buildGrid(0);
-        updateStepDots(0);
-        setStatus('タップで選択');
-        enableTapFallback();
-      };
-    } else {
-      loading.classList.add('hidden');
-    }
-  }, 5000);
 });
+
+/* ════ MediaPipe ════ */
+function runFaceMesh() {
+    const fm = new FaceMesh({
+        locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+    });
+    fm.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    fm.onResults(onResults);
+
+    const loop = async () => {
+        if (video.readyState >= 2) await fm.send({ image: video });
+        requestAnimationFrame(loop);
+    };
+    loop();
+}
+
+function onResults(res) {
+    const W = canvas.width  = window.innerWidth;
+    const H = canvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    if (!res.multiFaceLandmarks?.length) {
+        handleLeave(); return;
+    }
+
+    const iris = res.multiFaceLandmarks[0][468];
+    const gx = (1 - iris.x) * W;
+    const gy = iris.y * H;
+
+    drawGuide(gx, gy);
+
+    if (state.phase === 'scanning') {
+        state.scanProgress = Math.min(state.scanProgress + 0.4, 100);
+        const pct = Math.floor(state.scanProgress);
+        progressFill.style.width = pct + '%';
+        progressLabel.textContent = `IRIS SCANNING... ${pct}%`;
+        if (state.scanProgress >= SCAN_START) {
+            state.phase = 'ritual';
+            startStep('blood');
+        }
+    } else if (state.phase === 'ritual') {
+        handleGaze(gx, gy);
+    }
+}
+
+/* ════ 視線判定（グレース期間付き）════ */
+function handleGaze(gx, gy) {
+    const el     = document.elementFromPoint(gx, gy);
+    const target = el?.closest('.gaze-target');
+
+    if (target) {
+        state.gazeLeaveTime = 0; // ターゲット上にいる間はリセット時刻をクリア
+
+        if (state.currentTarget === target) {
+            // 同じターゲットを見続けている
+            const elapsed = Date.now() - state.gazeStartTime;
+            const ratio   = Math.min(elapsed / DWELL_TIME, 1);
+            setBar(target, ratio);
+            setIndicator(ratio);
+            if (elapsed >= DWELL_TIME) confirmSelection(target.dataset.value);
+        } else {
+            // 別のターゲットに視線が移った
+            clearHighlight();
+            state.currentTarget  = target;
+            state.gazeStartTime  = Date.now();
+            target.classList.add('highlight');
+        }
+    } else {
+        handleLeave();
+    }
+}
+
+function handleLeave() {
+    if (!state.currentTarget) return;
+
+    if (state.gazeLeaveTime === 0) {
+        state.gazeLeaveTime = Date.now();           // 離れた時刻を記録
+    } else if (Date.now() - state.gazeLeaveTime > GRACE_PERIOD) {
+        clearHighlight();                            // 猶予超えたらリセット
+    }
+    // 猶予内ならプログレスを維持（ジッター対策）
+}
+
+function clearHighlight() {
+    if (state.currentTarget) {
+        state.currentTarget.classList.remove('highlight');
+        setBar(state.currentTarget, 0);
+        state.currentTarget = null;
+    }
+    state.gazeLeaveTime = 0;
+    dwellInd.classList.remove('active');
+}
+
+function setBar(target, ratio) {
+    const bar = target.querySelector('.progress-fill-ring');
+    if (bar) bar.style.transform = `scaleX(${ratio})`;
+}
+
+function setIndicator(ratio) {
+    if (ratio > 0.05) {
+        dwellInd.classList.add('active');
+        dwellInd.textContent = `● LOCKING... ${Math.floor(ratio * 100)}%`;
+    } else {
+        dwellInd.classList.remove('active');
+    }
+}
+
+/* ════ 儀式ステップ ════ */
+function startStep(step) {
+    state.ritualStep    = step;
+    state.currentTarget = null;
+    state.gazeLeaveTime = 0;
+
+    ritualContainer.innerHTML   = '';
+    ritualContainer.className   = `gaze-grid grid-${step}`;
+
+    DATA[step].forEach(item => {
+        const div           = document.createElement('div');
+        div.className       = 'gaze-target';
+        div.dataset.value   = item;
+        div.innerHTML       = `<span>${item}</span><div class="progress-fill-ring"></div>`;
+        ritualContainer.appendChild(div);
+    });
+
+    ritualInst.innerHTML = LABELS[step].replace('\n', '<br>');
+    dwellInd.classList.remove('active');
+    ritualOverlay.classList.add('active');
+    ritualOverlay.scrollTop = 0;
+}
+
+function confirmSelection(value) {
+    clearHighlight();
+    state.results[state.ritualStep] = value;
+
+    const next = STEPS[STEPS.indexOf(state.ritualStep) + 1];
+    if (next) {
+        startStep(next);
+    } else {
+        ritualOverlay.classList.remove('active');
+        state.phase = 'loading';
+        showPhase('loading');
+        setTimeout(() => { showPhase('result'); renderResult(); }, 2200);
+    }
+}
+
+/* ════ 虹彩ガイド描画（CSS変数は使わない）════ */
+function drawGuide(x, y) {
+    const r = 22;
+    ctx.globalAlpha = 0.7;
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x - r - 6, y); ctx.lineTo(x - r + 4, y);
+    ctx.moveTo(x + r - 4, y); ctx.lineTo(x + r + 6, y);
+    ctx.moveTo(x, y - r - 6); ctx.lineTo(x, y - r + 4);
+    ctx.moveTo(x, y + r - 4); ctx.lineTo(x, y + r + 6);
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 0.8; ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = NEON; ctx.globalAlpha = 0.9; ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+/* ════ 結果 ════ */
+function renderResult() {
+    const { blood, month, day } = state.results;
+    document.getElementById('result-inner').innerHTML = `
+        <div class="result-header">IRIS RESONANCE — ANALYSIS COMPLETE</div>
+        <h2 class="result-title">照合完了</h2>
+        <p class="result-identity">${blood}型 / ${month}月${day}日生まれ</p>
+        <div class="result-divider"></div>
+        <div class="result-story">
+            <p>私は、孤独だった。</p>
+            <p>でもそれに気づいたのは、<em>星を見つけてから</em>だ。</p>
+            <p>（${blood}型・${month}月${day}日生まれのストーリー本文をここに）</p>
+        </div>
+    `;
+}
 </script>
 </body>
 </html>
