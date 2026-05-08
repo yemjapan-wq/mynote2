@@ -1,6 +1,273 @@
-git init
-git add .
-git commit -m "儀式の始まり"
-git branch -M main
-git remote add origin https://github.com/あなたのユーザー名/リポジトリ名.git
-git push -u origin main
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>未来ノート｜瞳が知っている、あなたの物語</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══ CSS（魔道書スタイル ＋ 儀式UI）═══ */
+:root {
+    --black: #000000; --deep: #050810; --gold: #c9a84c; --gold2: #f0d080; 
+    --neon: #00e5ff; --white: #f0ece4; --glow-gold: 0 0 15px rgba(201,168,76,0.5);
+}
+
+body {
+    background: var(--deep); color: var(--white); font-family: 'Noto Sans JP', sans-serif;
+    margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh;
+}
+
+/* フェーズ管理 */
+.phase { display: none; }
+.phase.active { display: block; }
+
+/* ─── 儀式用UI ─── */
+#ritual-overlay {
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none; transition: opacity 0.6s ease;
+}
+#ritual-overlay.active { opacity: 1; pointer-events: all; }
+
+.ritual-title {
+    font-family: 'Shippori Mincho', serif; color: var(--gold2);
+    font-size: 1.1rem; letter-spacing: 0.3em; text-align: center; margin-bottom: 30px;
+    text-shadow: var(--glow-gold);
+}
+
+/* 視線ターゲットの配置 */
+.gaze-grid { display: grid; gap: 12px; width: 90%; max-width: 400px; justify-content: center; }
+.grid-blood { grid-template-columns: repeat(2, 1fr); }
+.grid-month { grid-template-columns: repeat(4, 1fr); }
+.grid-day { grid-template-columns: repeat(6, 1fr); }
+
+.gaze-target {
+    aspect-ratio: 1/1; border: 1px solid rgba(201,168,76,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem;
+    position: relative; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    background: rgba(201,168,76,0.03);
+}
+
+/* 見つめている時のエフェクト */
+.gaze-target.highlight {
+    border-color: var(--neon); color: var(--white);
+    box-shadow: 0 0 20px var(--neon); transform: scale(1.15);
+    background: rgba(0,229,255,0.1); z-index: 10;
+}
+
+/* プログレスサークル */
+.gaze-target .progress-ring {
+    position: absolute; inset: -5px; border: 2px solid var(--neon);
+    border-radius: 50%; opacity: 0; transform: scale(0.8); transition: all 0.2s;
+}
+.gaze-target.highlight .progress-ring { opacity: 1; transform: scale(1); }
+
+/* ... 他、既存のLPデザイン用CSSをここに含める（長いので省略せずマージして下さい） ... */
+/* さきほどのHTMLから .fv, .page, .btn-scan などのスタイルを全てコピーしてここに貼ります */
+/* 以下、最低限必要なスタイル */
+#scanner-viewport { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
+video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+#iris-canvas { position: absolute; inset: 0; pointer-events: none; }
+#progress-wrap { position: absolute; bottom: 40px; width: 80%; left: 10%; }
+#progress-fill { height: 2px; width: 0%; background: var(--gold); transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <!-- フェーズ0：LP（魔道書） -->
+    <div id="phase-landing" class="phase active">
+        <!-- プロデューサーの元のLP内容をここに -->
+        <div style="text-align:center; padding:100px 20px;">
+            <h1 style="font-family:'Shippori Mincho';">未来ノート</h1>
+            <p>本当の物語を知る勇気がありますか？</p>
+            <button class="btn-scan" id="start-btn" style="margin-top:50px; padding:20px 40px; background:none; border:1px solid var(--gold); color:var(--gold);">瞳をスキャンする</button>
+        </div>
+    </div>
+
+    <!-- フェーズ1：スキャナー ＋ 儀式 -->
+    <div id="phase-scanner" class="phase">
+        <div id="scanner-viewport">
+            <video id="video" playsinline autoplay muted></video>
+            <canvas id="iris-canvas"></canvas>
+            
+            <!-- 視線による儀式レイヤー -->
+            <div id="ritual-overlay">
+                <h2 id="ritual-instruction" class="ritual-title"></h2>
+                <div id="ritual-container" class="gaze-grid"></div>
+            </div>
+
+            <div id="progress-wrap">
+                <div id="progress-fill"></div>
+                <p id="progress-label" style="font-size:10px; color:var(--gold); margin-top:10px; text-align:center;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- フェーズ2：結果表示 -->
+    <div id="phase-result" class="phase">
+        <div id="result-inner" style="padding:40px 20px;"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+<script>
+/* ═══ 状態管理 ═══ */
+let ritualStep = 'none'; // none -> blood -> month -> day -> complete
+let currentGazeTarget = null;
+let gazeStartTime = 0;
+const DWELL_TIME = 2000; // 2秒
+let resultsData = { color: '', blood: '', month: '', day: '' };
+
+const RITUAL_DATA = {
+    blood: ['A', 'B', 'O', 'AB'],
+    month: Array.from({length: 12}, (_, i) => (i + 1).toString()),
+    day: Array.from({length: 31}, (_, i) => (i + 1).toString())
+};
+
+/* ═══ カメラ・MediaPipe初期化 ═══ */
+const video = document.getElementById('video');
+const canvas = document.getElementById('iris-canvas');
+const ctx = canvas.getContext('2d');
+
+const faceMesh = new FaceMesh({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
+faceMesh.onResults(onResults);
+
+document.getElementById('start-btn').addEventListener('click', () => {
+    document.getElementById('phase-landing').classList.remove('active');
+    document.getElementById('phase-scanner').classList.add('active');
+    startCamera();
+});
+
+async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    video.srcObject = stream;
+    const loop = async () => {
+        await faceMesh.send({ image: video });
+        requestAnimationFrame(loop);
+    };
+    loop();
+}
+
+/* ═══ 儀式エンジン ═══ */
+function setupRitualStep(step) {
+    ritualStep = step;
+    const container = document.getElementById('ritual-container');
+    const instruction = document.getElementById('ritual-instruction');
+    const overlay = document.getElementById('ritual-overlay');
+    
+    container.innerHTML = '';
+    container.className = `gaze-grid grid-${step}`;
+    
+    RITUAL_DATA[step].forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'gaze-target';
+        div.innerHTML = `<span>${item}</span><div class="progress-ring"></div>`;
+        div.dataset.value = item;
+        container.appendChild(div);
+    });
+
+    const titles = {
+        blood: "あなたの「血液型」を<br>見つめてください",
+        month: "あなたの「誕生月」を<br>見つめてください",
+        day: "あなたの「誕生日」を<br>見つめてください"
+    };
+    instruction.innerHTML = titles[step];
+    overlay.classList.add('active');
+}
+
+function onResults(res) {
+    const W = canvas.width = window.innerWidth;
+    const H = canvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    if (res.multiFaceLandmarks?.[0]) {
+        const lms = res.multiFaceLandmarks[0];
+        const iris = lms[468]; // 右目中心
+        const x = (1 - iris.x) * W;
+        const y = iris.y * H;
+
+        // スキャン進捗の演出（儀式が始まるまでのダミー）
+        updateProgress(lms);
+
+        // 儀式中の視線判定
+        if (ritualStep !== 'none') {
+            const target = document.elementFromPoint(x, y)?.closest('.gaze-target');
+            if (target) {
+                if (currentGazeTarget === target) {
+                    const elapsed = Date.now() - gazeStartTime;
+                    target.classList.add('highlight');
+                    if (elapsed >= DWELL_TIME) confirmSelection(target.dataset.value);
+                } else {
+                    if (currentGazeTarget) currentGazeTarget.classList.remove('highlight');
+                    currentGazeTarget = target;
+                    gazeStartTime = Date.now();
+                }
+            } else {
+                if (currentGazeTarget) currentGazeTarget.classList.remove('highlight');
+                currentGazeTarget = null;
+            }
+        }
+        
+        // 瞳のガイド描画（演出用）
+        drawIrisGuide(x, y);
+    }
+}
+
+let scanProgress = 0;
+function updateProgress(lms) {
+    if (ritualStep !== 'none') return;
+    scanProgress += 0.5;
+    document.getElementById('progress-fill').style.width = `${scanProgress}%`;
+    document.getElementById('progress-label').textContent = `IRIS SCANNING... ${Math.floor(scanProgress)}%`;
+
+    if (scanProgress >= 30 && ritualStep === 'none') {
+        setupRitualStep('blood');
+    }
+}
+
+function confirmSelection(value) {
+    resultsData[ritualStep] = value;
+    const nextSteps = { blood: 'month', month: 'day', day: 'complete' };
+    const next = nextSteps[ritualStep];
+
+    if (next === 'complete') {
+        ritualStep = 'none';
+        document.getElementById('ritual-overlay').classList.remove('active');
+        showFinalResult();
+    } else {
+        setupRitualStep(next);
+    }
+}
+
+function drawIrisGuide(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 20, 0, Math.PI * 2);
+    ctx.strokeStyle = 'var(--gold)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+function showFinalResult() {
+    document.getElementById('phase-scanner').classList.remove('active');
+    document.getElementById('phase-result').classList.add('active');
+    
+    const inner = document.getElementById('result-inner');
+    inner.innerHTML = `
+        <h2 style="font-family:'Shippori Mincho'; color:var(--gold2);">照合完了</h2>
+        <p style="letter-spacing:0.2em;">${resultsData.blood}型の、${resultsData.month}月${resultsData.day}日生まれ。</p>
+        <p style="margin-top:30px; line-height:2;">あなたの瞳と選んだ刻印が、<br>1,488通りの運命からこの一節を導き出しました。</p>
+        <hr style="border:0; border-top:1px solid rgba(201,168,76,0.3); margin:40px 0;">
+        <div style="font-family:'Shippori Mincho'; line-height:2.8;">
+            （ここにプロデューサーの3000文字の物語の冒頭を流し込む）
+            私は、孤独だった。でもそれに気づいたのは、星を見つけてからだ……
+        </div>
+    `;
+}
+</script>
+</body>
+</html>
