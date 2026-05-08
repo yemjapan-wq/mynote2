@@ -6,268 +6,808 @@
 <title>未来ノート｜瞳が知っている、あなたの物語</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-/* ═══ CSS（魔道書スタイル ＋ 儀式UI）═══ */
+/* ═══ CSS変数 ═══ */
 :root {
-    --black: #000000; --deep: #050810; --gold: #c9a84c; --gold2: #f0d080; 
-    --neon: #00e5ff; --white: #f0ece4; --glow-gold: 0 0 15px rgba(201,168,76,0.5);
+    --black: #000000;
+    --deep: #050810;
+    --gold: #c9a84c;
+    --gold2: #f0d080;
+    --neon: #00e5ff;
+    --white: #f0ece4;
+    --glow-gold: 0 0 15px rgba(201,168,76,0.5);
+    --glow-neon: 0 0 20px rgba(0,229,255,0.6);
 }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    background: var(--deep); color: var(--white); font-family: 'Noto Sans JP', sans-serif;
-    margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh;
+    background: var(--deep);
+    color: var(--white);
+    font-family: 'Noto Sans JP', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
 }
 
-/* フェーズ管理 */
+/* ─── フェーズ管理 ─── */
 .phase { display: none; }
 .phase.active { display: block; }
 
-/* ─── 儀式用UI ─── */
-#ritual-overlay {
-    position: absolute; inset: 0; z-index: 100;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-    opacity: 0; pointer-events: none; transition: opacity 0.6s ease;
+/* ─── LP（魔道書）─── */
+#phase-landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
 }
-#ritual-overlay.active { opacity: 1; pointer-events: all; }
+
+#phase-landing::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.lp-deco {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.3);
+    letter-spacing: 0.2em;
+    margin-bottom: 30px;
+}
+
+.lp-eyecatch {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--gold2);
+    text-align: center;
+    line-height: 1.5;
+    text-shadow: var(--glow-gold);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+}
+
+.lp-sub {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.85rem;
+    color: rgba(240,208,128,0.6);
+    letter-spacing: 0.3em;
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.lp-divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    margin: 0 auto 60px;
+}
+
+.lp-copy {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    line-height: 2.8;
+    color: var(--white);
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto 60px;
+}
+
+.lp-copy em {
+    color: var(--gold2);
+    font-style: normal;
+}
+
+.btn-scan {
+    display: block;
+    margin: 0 auto;
+    padding: 18px 48px;
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.4em;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.4s ease;
+    text-align: center;
+}
+
+.btn-scan::before,
+.btn-scan::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: var(--gold2);
+    border-style: solid;
+    transition: all 0.3s ease;
+}
+
+.btn-scan::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.btn-scan::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+.btn-scan:hover {
+    background: rgba(201,168,76,0.08);
+    box-shadow: var(--glow-gold);
+    color: var(--gold2);
+}
+
+.lp-warn {
+    margin-top: 24px;
+    font-size: 0.7rem;
+    color: rgba(240,236,228,0.3);
+    text-align: center;
+    letter-spacing: 0.1em;
+}
+
+/* ─── スキャナー ─── */
+#scanner-viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+#iris-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+#scan-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.hud-corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: rgba(201,168,76,0.5);
+    border-style: solid;
+}
+
+.hud-corner.tl { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
+.hud-corner.tr { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
+.hud-corner.bl { bottom: 80px; left: 24px; border-width: 0 0 1px 1px; }
+.hud-corner.br { bottom: 80px; right: 24px; border-width: 0 1px 1px 0; }
+
+#progress-wrap {
+    position: absolute;
+    bottom: 32px;
+    width: 80%;
+    left: 10%;
+}
+
+#progress-track {
+    height: 1px;
+    background: rgba(201,168,76,0.2);
+    position: relative;
+}
+
+#progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--gold), var(--gold2));
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+#progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -3px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold2);
+    box-shadow: var(--glow-gold);
+}
+
+#progress-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gold);
+    margin-top: 10px;
+    text-align: center;
+    letter-spacing: 0.2em;
+}
+
+/* ─── 儀式オーバーレイ ─── */
+#ritual-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+
+#ritual-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
 
 .ritual-title {
-    font-family: 'Shippori Mincho', serif; color: var(--gold2);
-    font-size: 1.1rem; letter-spacing: 0.3em; text-align: center; margin-bottom: 30px;
+    font-family: 'Shippori Mincho', serif;
+    color: var(--gold2);
+    font-size: 1.05rem;
+    letter-spacing: 0.25em;
+    text-align: center;
+    margin-bottom: 32px;
     text-shadow: var(--glow-gold);
+    line-height: 1.8;
 }
 
-/* 視線ターゲットの配置 */
-.gaze-grid { display: grid; gap: 12px; width: 90%; max-width: 400px; justify-content: center; }
-.grid-blood { grid-template-columns: repeat(2, 1fr); }
+/* 視線グリッド */
+.gaze-grid {
+    display: grid;
+    gap: 10px;
+    width: 90%;
+    max-width: 380px;
+    justify-content: center;
+}
+
+.grid-blood { grid-template-columns: repeat(2, 1fr); max-width: 220px; }
 .grid-month { grid-template-columns: repeat(4, 1fr); }
-.grid-day { grid-template-columns: repeat(6, 1fr); }
+.grid-day   { grid-template-columns: repeat(6, 1fr); }
 
 .gaze-target {
-    aspect-ratio: 1/1; border: 1px solid rgba(201,168,76,0.2);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--gold); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem;
-    position: relative; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgba(201,168,76,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    position: relative;
+    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
     background: rgba(201,168,76,0.03);
+    cursor: default;
 }
 
-/* 見つめている時のエフェクト */
+.grid-blood .gaze-target { font-size: 1.3rem; }
+
 .gaze-target.highlight {
-    border-color: var(--neon); color: var(--white);
-    box-shadow: 0 0 20px var(--neon); transform: scale(1.15);
-    background: rgba(0,229,255,0.1); z-index: 10;
+    border-color: var(--neon);
+    color: var(--white);
+    box-shadow: 0 0 18px rgba(0,229,255,0.5);
+    transform: scale(1.12);
+    background: rgba(0,229,255,0.08);
+    z-index: 10;
 }
 
-/* プログレスサークル */
-.gaze-target .progress-ring {
-    position: absolute; inset: -5px; border: 2px solid var(--neon);
-    border-radius: 50%; opacity: 0; transform: scale(0.8); transition: all 0.2s;
+.progress-ring {
+    position: absolute;
+    inset: -4px;
+    border: 1.5px solid var(--neon);
+    border-radius: 4px;
+    opacity: 0;
+    transform: scale(0.85);
+    transition: all 0.25s ease;
 }
-.gaze-target.highlight .progress-ring { opacity: 1; transform: scale(1); }
 
-/* ... 他、既存のLPデザイン用CSSをここに含める（長いので省略せずマージして下さい） ... */
-/* さきほどのHTMLから .fv, .page, .btn-scan などのスタイルを全てコピーしてここに貼ります */
-/* 以下、最低限必要なスタイル */
-#scanner-viewport { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-#iris-canvas { position: absolute; inset: 0; pointer-events: none; }
-#progress-wrap { position: absolute; bottom: 40px; width: 80%; left: 10%; }
-#progress-fill { height: 2px; width: 0%; background: var(--gold); transition: width 0.3s; }
+.gaze-target.highlight .progress-ring {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.progress-fill-ring {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--neon);
+    transform-origin: left;
+    transform: scaleX(0);
+    box-shadow: var(--glow-neon);
+}
+
+/* ─── 結果画面 ─── */
+#phase-result {
+    min-height: 100vh;
+    background: var(--deep);
+    padding: 0;
+}
+
+#result-inner {
+    padding: 60px 28px 80px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.result-header {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.4);
+    letter-spacing: 0.3em;
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.result-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.6rem;
+    color: var(--gold2);
+    text-align: center;
+    line-height: 1.6;
+    text-shadow: var(--glow-gold);
+    margin-bottom: 12px;
+}
+
+.result-identity {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: rgba(0,229,255,0.6);
+    text-align: center;
+    letter-spacing: 0.2em;
+    margin-bottom: 40px;
+}
+
+.result-divider {
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 0 auto 40px;
+}
+
+.result-story {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 0.95rem;
+    line-height: 3;
+    color: var(--white);
+    border-left: 1px solid rgba(201,168,76,0.2);
+    padding-left: 20px;
+}
+
+.result-story em {
+    color: var(--gold2);
+    font-style: normal;
+}
+
+/* ─── ローディング画面 ─── */
+#phase-loading {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--deep);
+}
+
+.loading-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold);
+    letter-spacing: 0.3em;
+    animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+/* ─── エラーバナー ─── */
+#error-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(200,50,50,0.9);
+    color: #fff;
+    padding: 12px 24px;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    border-radius: 2px;
+    z-index: 999;
+    text-align: center;
+    max-width: 90vw;
+}
 </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- フェーズ0：LP（魔道書） -->
+
+    <!-- ── フェーズ0：LP ── -->
     <div id="phase-landing" class="phase active">
-        <!-- プロデューサーの元のLP内容をここに -->
-        <div style="text-align:center; padding:100px 20px;">
-            <h1 style="font-family:'Shippori Mincho';">未来ノート</h1>
-            <p>本当の物語を知る勇気がありますか？</p>
-            <button class="btn-scan" id="start-btn" style="margin-top:50px; padding:20px 40px; background:none; border:1px solid var(--gold); color:var(--gold);">瞳をスキャンする</button>
-        </div>
+        <p class="lp-deco">IRIS RESONANCE SYSTEM v2.1</p>
+        <h1 class="lp-eyecatch">未来ノート</h1>
+        <p class="lp-sub">瞳が知っている、あなたの物語</p>
+        <div class="lp-divider"></div>
+        <p class="lp-copy">
+            生まれた日。<br>
+            刻まれた血。<br>
+            <em>あなたの瞳の奥に、</em><br>
+            すでにすべての答えがある。<br>
+            本当の物語を知る<em>勇気</em>がありますか？
+        </p>
+        <button class="btn-scan" id="start-btn">瞳をスキャンする</button>
+        <p class="lp-warn">※ カメラへのアクセスが必要です。映像は外部に送信されません。</p>
     </div>
 
-    <!-- フェーズ1：スキャナー ＋ 儀式 -->
+    <!-- ── フェーズ1：スキャナー＋儀式 ── -->
     <div id="phase-scanner" class="phase">
         <div id="scanner-viewport">
             <video id="video" playsinline autoplay muted></video>
             <canvas id="iris-canvas"></canvas>
-            
-            <!-- 視線による儀式レイヤー -->
+
+            <div id="scan-hud">
+                <div class="hud-corner tl"></div>
+                <div class="hud-corner tr"></div>
+                <div class="hud-corner bl"></div>
+                <div class="hud-corner br"></div>
+            </div>
+
+            <!-- 儀式レイヤー -->
             <div id="ritual-overlay">
                 <h2 id="ritual-instruction" class="ritual-title"></h2>
                 <div id="ritual-container" class="gaze-grid"></div>
             </div>
 
             <div id="progress-wrap">
-                <div id="progress-fill"></div>
-                <p id="progress-label" style="font-size:10px; color:var(--gold); margin-top:10px; text-align:center;"></p>
+                <div id="progress-track">
+                    <div id="progress-fill"></div>
+                </div>
+                <p id="progress-label">INITIALIZING...</p>
             </div>
         </div>
     </div>
 
-    <!-- フェーズ2：結果表示 -->
-    <div id="phase-result" class="phase">
-        <div id="result-inner" style="padding:40px 20px;"></div>
+    <!-- ── フェーズ2：ローディング ── -->
+    <div id="phase-loading" class="phase">
+        <p class="loading-text">ANALYZING YOUR FATE...</p>
     </div>
+
+    <!-- ── フェーズ3：結果 ── -->
+    <div id="phase-result" class="phase">
+        <div id="result-inner"></div>
+    </div>
+
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<div id="error-banner"></div>
+
+<!-- MediaPipe Face Mesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
 <script>
-/* ═══ 状態管理 ═══ */
-let ritualStep = 'none'; // none -> blood -> month -> day -> complete
-let currentGazeTarget = null;
-let gazeStartTime = 0;
-const DWELL_TIME = 2000; // 2秒
-let resultsData = { color: '', blood: '', month: '', day: '' };
+/* ════════════════════════════════════
+   状態管理
+════════════════════════════════════ */
+const DWELL_TIME = 1800; // ms — 見つめ続ける時間
+
+const state = {
+    phase: 'landing',          // landing | scanning | ritual | loading | result
+    ritualStep: null,          // null | 'blood' | 'month' | 'day'
+    currentTarget: null,
+    gazeStartTime: 0,
+    scanProgress: 0,
+    results: { blood: '', month: '', day: '' }
+};
+
+const RITUAL_STEPS = ['blood', 'month', 'day'];
 
 const RITUAL_DATA = {
     blood: ['A', 'B', 'O', 'AB'],
-    month: Array.from({length: 12}, (_, i) => (i + 1).toString()),
-    day: Array.from({length: 31}, (_, i) => (i + 1).toString())
+    month: Array.from({ length: 12 }, (_, i) => String(i + 1)),
+    day:   Array.from({ length: 31 }, (_, i) => String(i + 1))
 };
 
-/* ═══ カメラ・MediaPipe初期化 ═══ */
-const video = document.getElementById('video');
-const canvas = document.getElementById('iris-canvas');
-const ctx = canvas.getContext('2d');
+const RITUAL_LABELS = {
+    blood: 'あなたの「血液型」を\n見つめてください',
+    month: 'あなたの「誕生月」を\n見つめてください',
+    day:   'あなたの「誕生日」を\n見つめてください'
+};
 
-const faceMesh = new FaceMesh({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
-faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
-faceMesh.onResults(onResults);
+/* ════════════════════════════════════
+   DOM参照
+════════════════════════════════════ */
+const video         = document.getElementById('video');
+const canvas        = document.getElementById('iris-canvas');
+const ctx           = canvas.getContext('2d');
+const progressFill  = document.getElementById('progress-fill');
+const progressLabel = document.getElementById('progress-label');
+const ritualOverlay = document.getElementById('ritual-overlay');
+const ritualInst    = document.getElementById('ritual-instruction');
+const ritualContainer = document.getElementById('ritual-container');
 
-document.getElementById('start-btn').addEventListener('click', () => {
-    document.getElementById('phase-landing').classList.remove('active');
-    document.getElementById('phase-scanner').classList.add('active');
-    startCamera();
+/* ════════════════════════════════════
+   フェーズ切替
+════════════════════════════════════ */
+function showPhase(id) {
+    document.querySelectorAll('.phase').forEach(el => el.classList.remove('active'));
+    document.getElementById('phase-' + id).classList.add('active');
+}
+
+function showError(msg) {
+    const banner = document.getElementById('error-banner');
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    setTimeout(() => { banner.style.display = 'none'; }, 4000);
+}
+
+/* ════════════════════════════════════
+   カメラ起動
+════════════════════════════════════ */
+document.getElementById('start-btn').addEventListener('click', async () => {
+    showPhase('scanner');
+    try {
+        await startCamera();
+    } catch (e) {
+        showError('カメラへのアクセスを許可してください');
+        showPhase('landing');
+    }
 });
 
 async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
     video.srcObject = stream;
+    await new Promise(res => { video.onloadedmetadata = res; });
+    video.play();
+    runFaceMesh();
+}
+
+/* ════════════════════════════════════
+   MediaPipe Face Mesh
+════════════════════════════════════ */
+let faceMesh;
+
+function runFaceMesh() {
+    faceMesh = new FaceMesh({
+        locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+    });
+
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,          // 虹彩ランドマーク有効（468〜477）
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(onFaceMeshResults);
+
     const loop = async () => {
-        await faceMesh.send({ image: video });
+        if (video.readyState >= 2) {
+            await faceMesh.send({ image: video });
+        }
         requestAnimationFrame(loop);
     };
     loop();
 }
 
-/* ═══ 儀式エンジン ═══ */
-function setupRitualStep(step) {
-    ritualStep = step;
-    const container = document.getElementById('ritual-container');
-    const instruction = document.getElementById('ritual-instruction');
-    const overlay = document.getElementById('ritual-overlay');
-    
-    container.innerHTML = '';
-    container.className = `gaze-grid grid-${step}`;
-    
-    RITUAL_DATA[step].forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'gaze-target';
-        div.innerHTML = `<span>${item}</span><div class="progress-ring"></div>`;
-        div.dataset.value = item;
-        container.appendChild(div);
-    });
-
-    const titles = {
-        blood: "あなたの「血液型」を<br>見つめてください",
-        month: "あなたの「誕生月」を<br>見つめてください",
-        day: "あなたの「誕生日」を<br>見つめてください"
-    };
-    instruction.innerHTML = titles[step];
-    overlay.classList.add('active');
-}
-
-function onResults(res) {
-    const W = canvas.width = window.innerWidth;
+/* ════════════════════════════════════
+   メインループ：視線処理
+════════════════════════════════════ */
+function onFaceMeshResults(res) {
+    const W = canvas.width  = window.innerWidth;
     const H = canvas.height = window.innerHeight;
     ctx.clearRect(0, 0, W, H);
 
-    if (res.multiFaceLandmarks?.[0]) {
-        const lms = res.multiFaceLandmarks[0];
-        const iris = lms[468]; // 右目中心
-        const x = (1 - iris.x) * W;
-        const y = iris.y * H;
+    if (!res.multiFaceLandmarks || res.multiFaceLandmarks.length === 0) return;
 
-        // スキャン進捗の演出（儀式が始まるまでのダミー）
-        updateProgress(lms);
+    const lms = res.multiFaceLandmarks[0];
 
-        // 儀式中の視線判定
-        if (ritualStep !== 'none') {
-            const target = document.elementFromPoint(x, y)?.closest('.gaze-target');
-            if (target) {
-                if (currentGazeTarget === target) {
-                    const elapsed = Date.now() - gazeStartTime;
-                    target.classList.add('highlight');
-                    if (elapsed >= DWELL_TIME) confirmSelection(target.dataset.value);
-                } else {
-                    if (currentGazeTarget) currentGazeTarget.classList.remove('highlight');
-                    currentGazeTarget = target;
-                    gazeStartTime = Date.now();
-                }
-            } else {
-                if (currentGazeTarget) currentGazeTarget.classList.remove('highlight');
-                currentGazeTarget = null;
-            }
-        }
-        
-        // 瞳のガイド描画（演出用）
-        drawIrisGuide(x, y);
+    // 右目虹彩中心：landmark 468
+    const iris = lms[468];
+    const gx = (1 - iris.x) * W;   // mirror flip済み
+    const gy = iris.y * H;
+
+    drawIrisGuide(gx, gy);
+
+    if (state.phase === 'scanning') {
+        handleScanProgress();
+    }
+
+    if (state.phase === 'ritual') {
+        handleGaze(gx, gy);
     }
 }
 
-let scanProgress = 0;
-function updateProgress(lms) {
-    if (ritualStep !== 'none') return;
-    scanProgress += 0.5;
-    document.getElementById('progress-fill').style.width = `${scanProgress}%`;
-    document.getElementById('progress-label').textContent = `IRIS SCANNING... ${Math.floor(scanProgress)}%`;
+/* ─── スキャン進捗 ─── */
+function handleScanProgress() {
+    state.scanProgress = Math.min(state.scanProgress + 0.4, 100);
+    const pct = Math.floor(state.scanProgress);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `IRIS SCANNING... ${pct}%`;
 
-    if (scanProgress >= 30 && ritualStep === 'none') {
-        setupRitualStep('blood');
+    if (state.scanProgress >= 30) {
+        state.phase = 'ritual';
+        startRitualStep('blood');
     }
+}
+
+/* ─── 視線判定（ドウェル選択）─── */
+function handleGaze(gx, gy) {
+    // canvas座標 → 画面要素
+    const el = document.elementFromPoint(gx, gy);
+    const target = el ? el.closest('.gaze-target') : null;
+
+    if (target) {
+        if (state.currentTarget === target) {
+            // 同じターゲットを見続けている
+            const elapsed = Date.now() - state.gazeStartTime;
+            const ratio = Math.min(elapsed / DWELL_TIME, 1);
+
+            // プログレスバー更新
+            const bar = target.querySelector('.progress-fill-ring');
+            if (bar) bar.style.transform = `scaleX(${ratio})`;
+
+            if (elapsed >= DWELL_TIME) {
+                confirmSelection(target.dataset.value);
+            }
+        } else {
+            // 新しいターゲット
+            clearHighlight();
+            state.currentTarget = target;
+            state.gazeStartTime = Date.now();
+            target.classList.add('highlight');
+        }
+    } else {
+        clearHighlight();
+    }
+}
+
+function clearHighlight() {
+    if (state.currentTarget) {
+        state.currentTarget.classList.remove('highlight');
+        const bar = state.currentTarget.querySelector('.progress-fill-ring');
+        if (bar) bar.style.transform = 'scaleX(0)';
+        state.currentTarget = null;
+    }
+}
+
+/* ════════════════════════════════════
+   儀式ステップ管理
+════════════════════════════════════ */
+function startRitualStep(step) {
+    state.ritualStep = step;
+    state.currentTarget = null;
+
+    ritualContainer.innerHTML = '';
+    ritualContainer.className = `gaze-grid grid-${step}`;
+
+    RITUAL_DATA[step].forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'gaze-target';
+        div.dataset.value = item;
+        div.innerHTML = `
+            <span>${item}</span>
+            <div class="progress-ring"></div>
+            <div class="progress-fill-ring"></div>
+        `;
+        ritualContainer.appendChild(div);
+    });
+
+    ritualInst.innerHTML = RITUAL_LABELS[step].replace('\n', '<br>');
+    ritualOverlay.classList.add('active');
 }
 
 function confirmSelection(value) {
-    resultsData[ritualStep] = value;
-    const nextSteps = { blood: 'month', month: 'day', day: 'complete' };
-    const next = nextSteps[ritualStep];
+    clearHighlight();
+    state.results[state.ritualStep] = value;
 
-    if (next === 'complete') {
-        ritualStep = 'none';
-        document.getElementById('ritual-overlay').classList.remove('active');
-        showFinalResult();
+    const idx = RITUAL_STEPS.indexOf(state.ritualStep);
+    const next = RITUAL_STEPS[idx + 1];
+
+    if (next) {
+        startRitualStep(next);
     } else {
-        setupRitualStep(next);
+        // 全ステップ完了
+        ritualOverlay.classList.remove('active');
+        state.phase = 'loading';
+        showPhase('loading');
+
+        setTimeout(() => {
+            showPhase('result');
+            renderResult();
+        }, 2200);
     }
 }
 
+/* ════════════════════════════════════
+   虹彩ガイド描画（Canvas）
+   ※ Canvas は CSS変数を解釈しないため直値で指定
+════════════════════════════════════ */
 function drawIrisGuide(x, y) {
+    const GOLD   = '#c9a84c';
+    const NEON   = '#00e5ff';
+    const radius = 22;
+
+    // 外円
     ctx.beginPath();
-    ctx.arc(x, y, 20, 0, Math.PI * 2);
-    ctx.strokeStyle = 'var(--gold)';
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = GOLD;
     ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.7;
     ctx.stroke();
+
+    // 十字
+    ctx.beginPath();
+    ctx.moveTo(x - radius - 6, y);
+    ctx.lineTo(x - radius + 4, y);
+    ctx.moveTo(x + radius - 4, y);
+    ctx.lineTo(x + radius + 6, y);
+    ctx.moveTo(x, y - radius - 6);
+    ctx.lineTo(x, y - radius + 4);
+    ctx.moveTo(x, y + radius - 4);
+    ctx.lineTo(x, y + radius + 6);
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 内点（neon）
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = NEON;
+    ctx.globalAlpha = 0.9;
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
 }
 
-function showFinalResult() {
-    document.getElementById('phase-scanner').classList.remove('active');
-    document.getElementById('phase-result').classList.add('active');
-    
-    const inner = document.getElementById('result-inner');
-    inner.innerHTML = `
-        <h2 style="font-family:'Shippori Mincho'; color:var(--gold2);">照合完了</h2>
-        <p style="letter-spacing:0.2em;">${resultsData.blood}型の、${resultsData.month}月${resultsData.day}日生まれ。</p>
-        <p style="margin-top:30px; line-height:2;">あなたの瞳と選んだ刻印が、<br>1,488通りの運命からこの一節を導き出しました。</p>
-        <hr style="border:0; border-top:1px solid rgba(201,168,76,0.3); margin:40px 0;">
-        <div style="font-family:'Shippori Mincho'; line-height:2.8;">
-            （ここにプロデューサーの3000文字の物語の冒頭を流し込む）
-            私は、孤独だった。でもそれに気づいたのは、星を見つけてからだ……
-        </div>
+/* ════════════════════════════════════
+   結果レンダリング
+   ↓ ここにプロデューサーの3000字ストーリーを差し込む
+════════════════════════════════════ */
+function renderResult() {
+    const { blood, month, day } = state.results;
+
+    // TODO: ここをAI APIに差し替えてパーソナライズ可能
+    const storyPlaceholder = `
+        <p>私は、孤独だった。</p>
+        <p>でもそれに気づいたのは、<em>星を見つけてから</em>だ。</p>
+        <p>あなたがこの言葉を読んでいるということは、<br>
+        もうすでに、何かが始まっている。</p>
+        <p>（ここに${blood}型・${month}月${day}日生まれのパーソナライズストーリー本文を差し込んでください）</p>
+    `;
+
+    document.getElementById('result-inner').innerHTML = `
+        <div class="result-header">IRIS RESONANCE — ANALYSIS COMPLETE</div>
+        <h2 class="result-title">照合完了</h2>
+        <p class="result-identity">${blood}型 / ${month}月${day}日生まれ</p>
+        <div class="result-divider"></div>
+        <div class="result-story">${storyPlaceholder}</div>
     `;
 }
+
+/* ════════════════════════════════════
+   スキャナー画面に入ったらphaseを設定
+════════════════════════════════════ */
+const observer = new MutationObserver(() => {
+    if (document.getElementById('phase-scanner').classList.contains('active')) {
+        state.phase = 'scanning';
+    }
+});
+observer.observe(document.getElementById('phase-scanner'), { attributes: true });
 </script>
 </body>
 </html>
