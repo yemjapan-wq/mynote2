@@ -1,0 +1,6 @@
+git init
+git add .
+git commit -m "儀式の始まり"
+git branch -M main
+git remote add origin https://github.com/あなたのユーザー名/リポジトリ名.git
+git push -u origin main
