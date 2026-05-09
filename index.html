@@ -283,7 +283,7 @@ body::before {
 .r-hdr { text-align: center; margin-bottom: 32px; }
 .r-sid {
   font-size: clamp(7px,1.6vw,9px);
-  color: #1f1f1f;
+  color: #3a3a3a;
   letter-spacing: .5em;
   margin-bottom: 6px;
 }
@@ -311,7 +311,7 @@ body::before {
 .r-stitle {
   font-size: clamp(7px,1.6vw,9px);
   letter-spacing: .55em;
-  color: #252525;
+  color: #4a4a4a;
   margin-bottom: 14px;
   text-transform: uppercase;
 }
@@ -326,11 +326,11 @@ body::before {
 }
 .fi-f {
   font-size: clamp(9px,2.2vw,12px);
-  color: #777;
+  color: #999;
   margin-top: 3px;
   line-height: 1.5;
 }
-.fi-f::before { content: '▸ '; color: #333; }
+.fi-f::before { content: '▸ '; color: #555; }
 .fi-b {
   font-size: clamp(9px,2.2vw,12px);
   color: var(--p);
@@ -340,17 +340,17 @@ body::before {
 }
 .fi-b::before { content: '▾ '; color: #441122; }
 
-.r-sup .fi-word { color: #1a1a1a; text-shadow: none; }
-.r-sup .fi-f    { color: #2a2a2a; }
-.r-sup .fi-b    { color: #3d1122; }
+.r-sup .fi-word { color: #3a3a3a; text-shadow: none; }
+.r-sup .fi-f    { color: #464646; }
+.r-sup .fi-b    { color: #6a2040; }
 
 .phys {
-  border: 1px solid #0d0d0d;
+  border: 1px solid #161616;
   padding: 16px;
   margin: 20px 0;
   font-size: clamp(8px,2vw,11px);
   line-height: 2.1;
-  color: #2a2a2a;
+  color: #484848;
   letter-spacing: .08em;
 }
 .phys span { color: var(--b); }
@@ -365,20 +365,20 @@ body::before {
 }
 .compat-l {
   font-size: clamp(7px,1.8vw,9px);
-  color: #222;
+  color: #404040;
   letter-spacing: .55em;
   margin-top: 5px;
 }
 
 .r-desc {
   font-size: clamp(9px,2.2vw,12px);
-  color: #2e2e2e;
+  color: #686868;
   line-height: 2;
   margin: 16px 0 24px;
   letter-spacing: .05em;
 }
 .r-desc .hi { color: var(--c); }
-.r-desc .lo { color: #111; }
+.r-desc .lo { color: #3a3a3a; }
 
 .cta-box {
   border: 1px solid rgba(0,245,255,.12);
@@ -398,17 +398,17 @@ body::before {
 .cta-lbl {
   font-size: clamp(7px,1.6vw,9px);
   letter-spacing: .55em;
-  color: #222;
+  color: #3a3a3a;
   margin-bottom: 10px;
 }
 .cta-txt {
   font-size: clamp(10px,2.3vw,13px);
-  color: #555;
+  color: #7a7a7a;
   line-height: 1.9;
   margin-bottom: 18px;
 }
 .cta-txt strong { color: var(--y); text-shadow: 0 0 8px rgba(255,230,0,.4); }
-.cta-txt em { color: #2a2a2a; font-style: normal; font-size: .9em; }
+.cta-txt em { color: #3a3a3a; font-style: normal; font-size: .9em; }
 
 .cta-btn {
   display: inline-block;
@@ -533,7 +533,7 @@ body::before {
 // ============================================================
 const NOTE_URL   = 'https://note.com/maxorange21/n/XXXXXXXXXX'; // ← 新しいnote URLに差し替え
 const NOTE_PRICE = '¥980';
-const SAMPLE_DURATION_MS = 40000; // サンプリング時間（ms）
+const SAMPLE_DURATION_MS = 20000; // サンプリング時間（ms）
 
 // ============================================================
 // DATA
@@ -817,16 +817,16 @@ function drawHUD(ctx, lm, W, H) {
     const ctr = px(lm[eye.irisC]);
     const pts = eye.ring.map(i => px(lm[i]));
 
-    // Iris radius estimate
+    // Iris radius — keep tight, no amplification
     let r = 0;
     pts.forEach(p => r += Math.hypot(p.x - ctr.x, p.y - ctr.y));
-    r = (r / pts.length) * 2.8;
+    r = (r / pts.length) * 1.4; // was 2.8 — halved to keep HUD near iris
 
     const pulse = 0.7 + 0.3 * Math.sin(t * 4 + ei * 1.5);
 
     // Outer scan ring (animated)
     ctx.beginPath();
-    ctx.arc(ctr.x, ctr.y, r * 2.6, 0, Math.PI * 2);
+    ctx.arc(ctr.x, ctr.y, r * 1.7, 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(0,245,255,${pulse * 0.25})`;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -838,26 +838,26 @@ function drawHUD(ctx, lm, W, H) {
     for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
       const [c, s] = [Math.cos(a), Math.sin(a)];
       ctx.beginPath();
-      ctx.moveTo(c * r * 1.85, s * r * 1.85);
-      ctx.lineTo(c * r * 2.15, s * r * 2.15);
+      ctx.moveTo(c * r * 1.25, s * r * 1.25);
+      ctx.lineTo(c * r * 1.48, s * r * 1.48);
       ctx.strokeStyle = `rgba(0,245,255,${pulse * 0.7})`;
       ctx.lineWidth = 1.5; ctx.stroke();
     }
     ctx.restore();
 
-    // Hexagon frame (counter-rotating)
+    // Hexagon frame (counter-rotating) — kept compact
     ctx.save();
     ctx.translate(ctr.x, ctr.y);
     ctx.rotate(t * -0.6 + ei * 0.5);
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
-      const m = r * 2.45;
+      const m = r * 1.6;  // was 2.45
       i === 0 ? ctx.moveTo(Math.cos(a)*m, Math.sin(a)*m)
               : ctx.lineTo(Math.cos(a)*m, Math.sin(a)*m);
     }
     ctx.closePath();
-    ctx.strokeStyle = `rgba(255,45,120,${pulse * 0.4})`;
+    ctx.strokeStyle = `rgba(255,45,120,${pulse * 0.5})`;
     ctx.lineWidth = 1; ctx.stroke();
     ctx.restore();
 
@@ -865,7 +865,7 @@ function drawHUD(ctx, lm, W, H) {
     for (let i = 0; i < 4; i++) {
       const a = (i / 4) * Math.PI * 2 + t * 0.3;
       ctx.beginPath();
-      ctx.arc(ctr.x + Math.cos(a) * r * 2.45, ctr.y + Math.sin(a) * r * 2.45, 2.5, 0, Math.PI * 2);
+      ctx.arc(ctr.x + Math.cos(a) * r * 1.6, ctr.y + Math.sin(a) * r * 1.6, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(0,245,255,${pulse})`;
       ctx.fill();
     }
@@ -873,7 +873,7 @@ function drawHUD(ctx, lm, W, H) {
     // Iris circle
     ctx.beginPath();
     ctx.arc(ctr.x, ctr.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.6})`;
+    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.7})`;
     ctx.lineWidth = 1.5; ctx.stroke();
 
     // Cross-hair
@@ -881,14 +881,14 @@ function drawHUD(ctx, lm, W, H) {
     const ch = r * 0.55;
     ctx.moveTo(ctr.x - ch, ctr.y); ctx.lineTo(ctr.x + ch, ctr.y);
     ctx.moveTo(ctr.x, ctr.y - ch); ctx.lineTo(ctr.x, ctr.y + ch);
-    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.35})`;
+    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.4})`;
     ctx.lineWidth = 0.5; ctx.stroke();
 
     // Lock arc (progress)
     const lockPct = Math.min(1, lockFrames / LOCK_TARGET);
     if (lockPct > 0) {
       ctx.beginPath();
-      ctx.arc(ctr.x, ctr.y, r * 3.1, -Math.PI / 2, -Math.PI / 2 + lockPct * Math.PI * 2);
+      ctx.arc(ctr.x, ctr.y, r * 1.95, -Math.PI / 2, -Math.PI / 2 + lockPct * Math.PI * 2);
       ctx.strokeStyle = `rgba(255,45,120,${pulse})`;
       ctx.lineWidth = 2; ctx.stroke();
     }
@@ -899,7 +899,7 @@ function drawHUD(ctx, lm, W, H) {
     ctx.fillStyle = `rgba(0,245,255,${pulse * 0.5})`;
     ctx.fillText(
       `${(t * 100 | 0) % 1000}`.padStart(3,'0'),
-      ctr.x + r * 2.6, ctr.y + r * 0.5
+      ctr.x + r * 1.75, ctr.y + r * 0.5
     );
 
     // Store left eye center for dive target
