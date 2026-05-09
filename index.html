@@ -1,678 +1,611 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>未来ノート｜瞳が知っている、あなたの物語</title>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
-<style>
-:root {
-    --black: #000000;
-    --deep: #050810;
-    --gold: #c9a84c;
-    --gold2: #f0d080;
-    --neon: #00e5ff;
-    --white: #f0ece4;
-    --glow-gold: 0 0 15px rgba(201,168,76,0.5);
-    --glow-neon: 0 0 20px rgba(0,229,255,0.6);
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>未来ノート ― 宿命同期儀式</title>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #050810;
+      --gold:    #D4AF37;
+      --gold-lt: #F0D870;
+      --gold-dk: #8B6914;
+      --text:    #E8DCC8;
+      --text-d:  rgba(232,220,200,0.42);
+      --font:    'Shippori Mincho','Hiragino Mincho Pro',serif;
+      --rc:      213.6; /* 2π × 34 */
+    }
 
-body {
-    background: var(--deep);
-    color: var(--white);
-    font-family: 'Noto Sans JP', sans-serif;
-    overflow-x: hidden;
-    min-height: 100vh;
-}
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-.phase { display: none; }
-.phase.active { display: block; }
+    #videoEl {
+      position: fixed;
+      width: 1px; height: 1px; opacity: 0.01;
+      top: 0; left: 0; pointer-events: none;
+    }
 
-/* ─── LP ─── */
-#phase-landing {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    position: relative;
-    overflow: hidden;
-}
-#phase-landing::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.08) 0%, transparent 70%);
-    pointer-events: none;
-}
-.lp-deco {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.65rem;
-    color: rgba(201,168,76,0.3);
-    letter-spacing: 0.2em;
-    margin-bottom: 30px;
-}
-.lp-eyecatch {
-    font-family: 'Shippori Mincho', serif;
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--gold2);
-    text-align: center;
-    line-height: 1.5;
-    text-shadow: var(--glow-gold);
-    margin-bottom: 16px;
-    letter-spacing: 0.1em;
-}
-.lp-sub {
-    font-family: 'Shippori Mincho', serif;
-    font-size: 0.85rem;
-    color: rgba(240,208,128,0.6);
-    letter-spacing: 0.3em;
-    text-align: center;
-    margin-bottom: 60px;
-}
-.lp-divider {
-    width: 1px;
-    height: 60px;
-    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
-    margin: 0 auto 60px;
-}
-.lp-copy {
-    font-family: 'Shippori Mincho', serif;
-    font-size: 1rem;
-    line-height: 2.8;
-    color: var(--white);
-    text-align: center;
-    max-width: 340px;
-    margin: 0 auto 60px;
-}
-.lp-copy em { color: var(--gold2); font-style: normal; }
-.btn-scan {
-    display: block;
-    margin: 0 auto;
-    padding: 18px 48px;
-    background: none;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    font-family: 'Shippori Mincho', serif;
-    font-size: 0.95rem;
-    letter-spacing: 0.4em;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.4s ease;
-}
-.btn-scan::before, .btn-scan::after {
-    content: '';
-    position: absolute;
-    width: 8px; height: 8px;
-    border-color: var(--gold2);
-    border-style: solid;
-    transition: all 0.3s ease;
-}
-.btn-scan::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-.btn-scan::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-.btn-scan:hover { background: rgba(201,168,76,0.08); box-shadow: var(--glow-gold); color: var(--gold2); }
-.lp-warn {
-    margin-top: 24px;
-    font-size: 0.7rem;
-    color: rgba(240,236,228,0.3);
-    text-align: center;
-    letter-spacing: 0.1em;
-}
+    #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 
-/* ─── スキャナー ─── */
-#scanner-viewport {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-}
-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1);
-}
-#iris-canvas { position: absolute; inset: 0; pointer-events: none; }
-#scan-hud { position: absolute; inset: 0; pointer-events: none; }
-.hud-corner { position: absolute; width: 24px; height: 24px; border-color: rgba(201,168,76,0.5); border-style: solid; }
-.hud-corner.tl { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
-.hud-corner.tr { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
-.hud-corner.bl { bottom: 80px; left: 24px; border-width: 0 0 1px 1px; }
-.hud-corner.br { bottom: 80px; right: 24px; border-width: 0 1px 1px 0; }
-#progress-wrap { position: absolute; bottom: 32px; width: 80%; left: 10%; }
-#progress-track { height: 1px; background: rgba(201,168,76,0.2); }
-#progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(to right, var(--gold), var(--gold2));
-    transition: width 0.3s ease;
-    position: relative;
-}
-#progress-fill::after {
-    content: '';
-    position: absolute;
-    right: 0; top: -3px;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--gold2);
-    box-shadow: var(--glow-gold);
-}
-#progress-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--gold);
-    margin-top: 10px;
-    text-align: center;
-    letter-spacing: 0.2em;
-}
+    /* ── Background ── */
+    .bg-r {
+      position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 55% 40% at 28% 72%, rgba(212,175,55,.055) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 55% at 72% 28%, rgba(70,50,160,.08)   0%, transparent 55%);
+    }
+    .sf { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    .star {
+      position: absolute; border-radius: 50%;
+      background: var(--gold-lt); opacity: 0;
+      animation: tw var(--d) ease-in-out infinite;
+      animation-delay: var(--dl);
+    }
+    @keyframes tw { 0%,100%{opacity:0;transform:scale(.7)} 50%{opacity:var(--op);transform:scale(1)} }
 
-/* ─── 儀式オーバーレイ ─── */
-/* ★ fixed + overflow-y:auto で31個全部表示 */
-#ritual-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 20px 12px 24px;
-    background: rgba(0,0,0,0.88);
-    backdrop-filter: blur(8px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s ease;
-}
-#ritual-overlay.active { opacity: 1; pointer-events: all; }
+    /* ── Frame ── */
+    .frame { position: fixed; inset: 18px; pointer-events: none; border: 1px solid rgba(212,175,55,.12); }
+    .frame .c { position: absolute; width: 22px; height: 22px; border-color: rgba(212,175,55,.55); border-style: solid; }
+    .frame .tl { top:-1px;    left:-1px;  border-width: 2px 0 0 2px; }
+    .frame .tr { top:-1px;    right:-1px; border-width: 2px 2px 0 0; }
+    .frame .br { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
+    .frame .bl { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
 
-.ritual-title {
-    font-family: 'Shippori Mincho', serif;
-    color: var(--gold2);
-    font-size: 1rem;
-    letter-spacing: 0.2em;
-    text-align: center;
-    margin-bottom: 14px;
-    text-shadow: var(--glow-gold);
-    line-height: 1.8;
-    flex-shrink: 0;
-}
+    /* ── Screens ── */
+    .sc {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 44px 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .75s ease;
+    }
+    .sc.on { opacity: 1; pointer-events: auto; }
 
-/* ドウェル進捗テキスト */
-#dwell-indicator {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--neon);
-    letter-spacing: 0.25em;
-    text-align: center;
-    margin-bottom: 14px;
-    height: 18px;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-#dwell-indicator.active { opacity: 1; }
+    /* ── INTRO ── */
+    .eyebrow { font-size:.62rem; letter-spacing:.6em; color:var(--text-d); margin-bottom:18px; text-align:center; }
+    .t-main {
+      font-size: clamp(2.4rem,11vw,4.2rem);
+      font-weight: 800; letter-spacing: .28em; text-align: center;
+      background: linear-gradient(165deg, var(--gold-lt) 0%, var(--gold) 48%, var(--gold-dk) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1.25;
+    }
+    .t-sub { font-size:clamp(.9rem,4vw,1.25rem); letter-spacing:.38em; color:rgba(212,175,55,.48); margin-bottom:36px; text-align:center; margin-top:4px; }
+    .intro-desc { font-size:clamp(.7rem,3vw,.82rem); color:var(--text-d); text-align:center; letter-spacing:.14em; line-height:2.3; margin-bottom:44px; max-width:300px; }
+    .btn-r {
+      position:relative; overflow:hidden;
+      background:transparent; border:1px solid var(--gold);
+      color:var(--gold); font-family:var(--font);
+      font-size:.88rem; font-weight:600; letter-spacing:.38em;
+      padding:15px 56px; cursor:pointer;
+      transition:color .3s ease; -webkit-appearance:none;
+    }
+    .btn-r::before {
+      content:''; position:absolute; inset:0;
+      background:var(--gold); transform:translateX(-102%);
+      transition:transform .32s ease;
+    }
+    .btn-r:active::before, .btn-r:hover::before { transform:translateX(0); }
+    .btn-r:active, .btn-r:hover { color:var(--bg); }
+    .btn-r span { position:relative; z-index:1; }
+    .intro-note { margin-top:22px; font-size:.58rem; color:rgba(212,175,55,.18); letter-spacing:.28em; text-align:center; max-width:280px; line-height:1.8; }
 
-/* 視線グリッド共通 */
-.gaze-grid {
-    display: grid;
-    gap: 8px;
-    width: 94%;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.grid-blood {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 200px;
-    gap: 14px;
-}
-.grid-month {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 300px;
-}
-/* ★ 日付：7列 × 5行 = 35マス（31個+空4） */
-.grid-day {
-    grid-template-columns: repeat(7, 1fr);
-    max-width: 360px;
-    gap: 5px;
-}
+    /* ── LOADING ── */
+    .lg { font-size:2.2rem; color:rgba(212,175,55,.3); margin-bottom:22px; animation:gr 5s linear infinite; }
+    @keyframes gr { 0%{transform:rotate(0deg);opacity:.2} 25%{opacity:.7} 50%{transform:rotate(180deg);opacity:.2} 75%{opacity:.7} 100%{transform:rotate(360deg);opacity:.2} }
+    .lt { font-size:.72rem; letter-spacing:.42em; color:var(--text-d); animation:pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
 
-.gaze-target {
-    aspect-ratio: 1 / 1;
-    border: 1px solid rgba(201,168,76,0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--gold);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.95rem;
-    position: relative;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    background: rgba(201,168,76,0.03);
-    user-select: none;
-}
-.grid-blood .gaze-target { font-size: 1.4rem; }
-.grid-month .gaze-target { font-size: 0.9rem; }
-.grid-day   .gaze-target { font-size: 0.75rem; }
+    /* ── SYNC ── */
+    .ph-lbl { font-size:.65rem; letter-spacing:.48em; color:var(--text-d); margin-bottom:16px; text-align:center; text-transform:uppercase; }
+    .s-big {
+      font-size:clamp(4.5rem,24vw,9.5rem);
+      font-weight:800; letter-spacing:.08em; text-align:center;
+      min-height:1.15em; display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(155deg, var(--gold-lt) 0%, var(--gold) 52%, var(--gold-dk) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      transition: opacity 240ms ease, transform 240ms ease;
+      will-change: opacity, transform;
+    }
+    .s-big.hide { opacity:0; transform:scale(.88); }
+    .s-big.show { opacity:1; transform:scale(1); }
 
-.gaze-target.highlight {
-    border-color: var(--neon);
-    color: var(--white);
-    box-shadow: 0 0 14px rgba(0,229,255,0.5);
-    transform: scale(1.1);
-    background: rgba(0,229,255,0.08);
-    z-index: 10;
-}
+    /* eye ring */
+    .rw { position:relative; width:74px; height:74px; margin:18px auto 0; }
+    .rsv { width:74px; height:74px; transform:rotate(-90deg); }
+    .rbg { fill:none; stroke:rgba(212,175,55,.1); stroke-width:2.5; }
+    .rarc {
+      fill:none; stroke:var(--gold); stroke-width:2.5; stroke-linecap:round;
+      stroke-dasharray:213.6; stroke-dashoffset:213.6;
+      transition:stroke-dashoffset .1s linear;
+      filter:drop-shadow(0 0 5px var(--gold));
+    }
+    .rlbl {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center; font-size:.52rem;
+      letter-spacing:.06em; line-height:1.6; color:var(--text-d); white-space:pre;
+    }
 
-/* ドウェルプログレスバー（セル下端） */
-.progress-fill-ring {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--neon);
-    transform-origin: left;
-    transform: scaleX(0);
-    box-shadow: var(--glow-neon);
-}
+    .s-instr { font-size:clamp(.68rem,3vw,.8rem); color:var(--text-d); text-align:center; letter-spacing:.18em; line-height:2.2; margin-top:10px; }
+    .nf { min-height:1.1em; font-size:.58rem; letter-spacing:.22em; color:rgba(212,175,55,.28); text-align:center; margin-top:4px; }
 
-/* ─── ローディング ─── */
-#phase-loading {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--deep);
-}
-.loading-text {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--gold);
-    letter-spacing: 0.3em;
-    animation: blink 1.2s ease-in-out infinite;
-}
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+    .prog { display:flex; gap:9px; margin-top:28px; }
+    .dot { width:5px; height:5px; border-radius:50%; background:rgba(212,175,55,.18); transition:background .4s,box-shadow .4s; }
+    .dot.done { background:var(--gold); }
+    .dot.cur  { background:var(--gold); box-shadow:0 0 8px var(--gold); animation:db 1s ease-in-out infinite; }
+    @keyframes db { 0%,100%{transform:scale(1)} 50%{transform:scale(1.55)} }
 
-/* ─── 結果 ─── */
-#phase-result { min-height: 100vh; background: var(--deep); }
-#result-inner { padding: 60px 28px 80px; max-width: 480px; margin: 0 auto; }
-.result-header {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.65rem;
-    color: rgba(201,168,76,0.4);
-    letter-spacing: 0.3em;
-    text-align: center;
-    margin-bottom: 40px;
-}
-.result-title {
-    font-family: 'Shippori Mincho', serif;
-    font-size: 1.6rem;
-    color: var(--gold2);
-    text-align: center;
-    line-height: 1.6;
-    text-shadow: var(--glow-gold);
-    margin-bottom: 12px;
-}
-.result-identity {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    color: rgba(0,229,255,0.6);
-    text-align: center;
-    letter-spacing: 0.2em;
-    margin-bottom: 40px;
-}
-.result-divider {
-    width: 40px; height: 1px;
-    background: linear-gradient(to right, transparent, var(--gold), transparent);
-    margin: 0 auto 40px;
-}
-.result-story {
-    font-family: 'Shippori Mincho', serif;
-    font-size: 0.95rem;
-    line-height: 3;
-    color: var(--white);
-    border-left: 1px solid rgba(201,168,76,0.2);
-    padding-left: 20px;
-}
-.result-story em { color: var(--gold2); font-style: normal; }
+    .btn-m {
+      margin-top:20px; background:none; border:none; cursor:pointer;
+      font-family:var(--font); font-size:.58rem;
+      color:rgba(212,175,55,.18); letter-spacing:.28em; padding:8px;
+      transition:color .3s;
+    }
+    .btn-m:active, .btn-m:hover, .btn-m.vis { color:rgba(212,175,55,.6); }
 
-/* ─── エラー ─── */
-#error-banner {
-    display: none;
-    position: fixed;
-    bottom: 20px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(200,50,50,0.9);
-    color: #fff;
-    padding: 12px 24px;
-    font-size: 0.8rem;
-    border-radius: 2px;
-    z-index: 999;
-    text-align: center;
-    max-width: 90vw;
-}
-</style>
+    /* ── DESIRE ── */
+    .dq { font-size:clamp(1.3rem,6.5vw,2.1rem); font-weight:600; text-align:center; letter-spacing:.1em; line-height:1.95; white-space:pre-line; margin-bottom:26px; }
+    .dopts { display:flex; flex-direction:column; gap:9px; align-items:center; }
+    .dopt { font-size:.7rem; letter-spacing:.22em; color:var(--text-d); }
+    .dopt strong { color:var(--gold); font-weight:600; }
+    .tbar { width:170px; height:1px; background:rgba(212,175,55,.13); margin-top:26px; overflow:hidden; }
+    .tfill { height:100%; width:100%; background:var(--gold); transform-origin:left; will-change:transform; }
+
+    /* ── RESULT ── */
+    .r-eyebrow { font-size:.58rem; letter-spacing:.6em; color:var(--text-d); margin-bottom:28px; text-align:center; }
+    .r-card { position:relative; border:1px solid rgba(212,175,55,.26); padding:26px 30px; width:min(340px,90vw); }
+    .r-gem { position:absolute; top:-.65em; left:50%; transform:translateX(-50%); background:var(--bg); padding:0 10px; color:var(--gold); font-size:.95rem; }
+    .r-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(212,175,55,.08); }
+    .r-row:last-child { border-bottom:none; }
+    .rk { font-size:.68rem; letter-spacing:.24em; color:var(--text-d); }
+    .rv { font-size:.82rem; font-weight:600; letter-spacing:.1em; color:var(--gold); }
+    .rv.synced { color:#8EE88E; font-size:.68rem; }
+    .r-msg { margin-top:26px; font-size:.76rem; line-height:2.3; text-align:center; color:var(--text-d); max-width:310px; letter-spacing:.06em; }
+    .r-msg em { color:var(--text); font-style:normal; }
+    .btn-redo { margin-top:24px; background:none; border:none; cursor:pointer; font-family:var(--font); font-size:.68rem; color:rgba(212,175,55,.28); letter-spacing:.3em; padding:8px; transition:color .3s; }
+    .btn-redo:hover, .btn-redo:active { color:rgba(212,175,55,.7); }
+
+    /* ── ERROR ── */
+    .eglyph { font-size:2rem; color:rgba(180,60,60,.5); margin-bottom:14px; }
+    .etxt { font-size:.78rem; color:rgba(200,100,100,.82); text-align:center; line-height:2.1; letter-spacing:.1em; white-space:pre-line; max-width:280px; }
+    .btn-retry { margin-top:26px; background:none; border:1px solid rgba(212,175,55,.28); color:rgba(212,175,55,.58); font-family:var(--font); font-size:.73rem; letter-spacing:.3em; padding:12px 32px; cursor:pointer; transition:border-color .3s,color .3s; }
+    .btn-retry:hover, .btn-retry:active { border-color:var(--gold); color:var(--gold); }
+
+    /* ── Overlays ── */
+    .aura { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at center, rgba(212,175,55,.15) 0%, transparent 68%); opacity:0; transition:opacity .2s ease; }
+    .aura.on { opacity:1; animation:ab .72s ease-in-out infinite; }
+    @keyframes ab { 0%,100%{opacity:.45} 50%{opacity:1} }
+    .flash { position:fixed; inset:0; pointer-events:none; opacity:0; background:rgba(212,175,55,.22); }
+    .flash.pop { animation:fp .85s ease-out forwards; }
+    @keyframes fp { 0%{opacity:1} 100%{opacity:0} }
+    .fbar { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); font-size:.56rem; letter-spacing:.34em; color:rgba(212,175,55,.18); transition:color .5s; pointer-events:none; white-space:nowrap; }
+    .fbar.on { color:rgba(212,175,55,.5); }
+  </style>
 </head>
 <body>
+
+<video id="videoEl" playsinline autoplay muted></video>
+
 <div id="app">
+  <div class="bg-r"></div>
+  <div class="sf" id="sf"></div>
+  <div class="frame">
+    <div class="c tl"></div><div class="c tr"></div>
+    <div class="c br"></div><div class="c bl"></div>
+  </div>
 
-    <!-- LP -->
-    <div id="phase-landing" class="phase active">
-        <p class="lp-deco">IRIS RESONANCE SYSTEM v2.1</p>
-        <h1 class="lp-eyecatch">未来ノート</h1>
-        <p class="lp-sub">瞳が知っている、あなたの物語</p>
-        <div class="lp-divider"></div>
-        <p class="lp-copy">
-            生まれた日。<br>刻まれた血。<br>
-            <em>あなたの瞳の奥に、</em><br>
-            すでにすべての答えがある。<br>
-            本当の物語を知る<em>勇気</em>がありますか？
-        </p>
-        <button class="btn-scan" id="start-btn">瞳をスキャンする</button>
-        <p class="lp-warn">※ カメラへのアクセスが必要です。映像は外部に送信されません。</p>
-    </div>
+  <!-- INTRO -->
+  <div class="sc on" id="s-intro">
+    <div class="eyebrow">∴ 宿命同期システム ∴</div>
+    <h1 class="t-main">未来ノート</h1>
+    <div class="t-sub">宿命同期儀式</div>
+    <p class="intro-desc">
+      あなたの血液型・誕生日をAIと同期します<br>
+      念じながら、ゆっくりと目を閉じてください<br>
+      カメラへのアクセスが必要です
+    </p>
+    <button class="btn-r" id="btnStart"><span>儀式を開始する</span></button>
+    <div class="intro-note">カメラ映像はお使いの端末内でのみ処理され<br>外部サーバーへの送信は一切行いません</div>
+  </div>
 
-    <!-- スキャナー -->
-    <div id="phase-scanner" class="phase">
-        <div id="scanner-viewport">
-            <video id="video" playsinline autoplay muted></video>
-            <canvas id="iris-canvas"></canvas>
-            <div id="scan-hud">
-                <div class="hud-corner tl"></div>
-                <div class="hud-corner tr"></div>
-                <div class="hud-corner bl"></div>
-                <div class="hud-corner br"></div>
-            </div>
-            <div id="progress-wrap">
-                <div id="progress-track"><div id="progress-fill"></div></div>
-                <p id="progress-label">INITIALIZING...</p>
-            </div>
-        </div>
-        <!-- fixed配置の儀式オーバーレイ -->
-        <div id="ritual-overlay">
-            <h2 id="ritual-instruction" class="ritual-title"></h2>
-            <div id="dwell-indicator">● LOCKING...</div>
-            <div id="ritual-container" class="gaze-grid"></div>
-        </div>
-    </div>
+  <!-- LOADING -->
+  <div class="sc" id="s-loading">
+    <div class="lg">⬡</div>
+    <div class="lt" id="lt">同期システムを起動中…</div>
+  </div>
 
-    <!-- ローディング -->
-    <div id="phase-loading" class="phase">
-        <p class="loading-text">ANALYZING YOUR FATE...</p>
+  <!-- SYNC -->
+  <div class="sc" id="s-sync">
+    <div class="ph-lbl" id="sLabel">血液型を同期中</div>
+    <div class="s-big show" id="sBig">A</div>
+    <div class="nf" id="nf1"></div>
+    <div class="rw">
+      <svg class="rsv" viewBox="0 0 74 74">
+        <circle class="rbg" cx="37" cy="37" r="34"/>
+        <circle class="rarc" id="sArc" cx="37" cy="37" r="34"/>
+      </svg>
+      <div class="rlbl" id="sLbl">閉眼&#10;待機</div>
     </div>
+    <p class="s-instr">念じながら、ゆっくりと<br>目を閉じてください</p>
+    <div class="prog" id="prog"></div>
+    <button class="btn-m" id="btnM">✦ タップで手動選択</button>
+  </div>
 
-    <!-- 結果 -->
-    <div id="phase-result" class="phase">
-        <div id="result-inner"></div>
+  <!-- DESIRE -->
+  <div class="sc" id="s-desire">
+    <div class="ph-lbl" id="dLabel">第一の問い</div>
+    <div class="dq" id="dQ">富を得たいか</div>
+    <div class="dopts">
+      <div class="dopt"><strong>目を閉じる</strong> → はい（渇望として記録）</div>
+      <div class="dopt"><strong>このまま待つ</strong> → いいえ（充足として記録）</div>
     </div>
+    <div class="rw" style="margin-top:22px;">
+      <svg class="rsv" viewBox="0 0 74 74">
+        <circle class="rbg" cx="37" cy="37" r="34"/>
+        <circle class="rarc" id="dArc" cx="37" cy="37" r="34"/>
+      </svg>
+      <div class="rlbl" id="dLbl">閉眼&#10;待機</div>
+    </div>
+    <div class="tbar"><div class="tfill" id="tfill"></div></div>
+    <div class="nf" id="nf2"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="sc" id="s-result">
+    <div class="r-eyebrow">― 同期完了 ―</div>
+    <div class="r-card">
+      <div class="r-gem">◈</div>
+      <div id="rRows"></div>
+    </div>
+    <p class="r-msg" id="rMsg"></p>
+    <button class="btn-redo" id="btnRedo">▸ 再儀式</button>
+  </div>
+
+  <!-- ERROR -->
+  <div class="sc" id="s-error">
+    <div class="eglyph">⊗</div>
+    <div class="etxt" id="eTxt">エラーが発生しました</div>
+    <button class="btn-retry" id="btnRetry">再試行</button>
+  </div>
 </div>
 
-<div id="error-banner"></div>
+<div class="aura" id="aura"></div>
+<div class="flash" id="flash"></div>
+<div class="fbar" id="fbar">顔検出待機中</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
 <script>
-/* ════ 定数 ════ */
-const DWELL_TIME   = 3000;  // ★ 3秒（元2秒から変更）
-const GRACE_PERIOD = 500;   // ★ 視線が外れてからリセットまでの猶予ms
-const SCAN_START   = 30;
+'use strict';
 
-const GOLD = '#c9a84c';
-const NEON = '#00e5ff';
-
-/* ════ 状態 ════ */
-const state = {
-    phase: 'landing',
-    ritualStep: null,
-    currentTarget: null,
-    gazeStartTime: 0,
-    gazeLeaveTime: 0,   // ★ 視線が外れた時刻
-    scanProgress: 0,
-    results: { blood: '', month: '', day: '' }
+/* ═══ CONFIG ═══ */
+const CFG = {
+  EYE:   0.018,  // raw normalized y-gap → closed
+  HOLD:  1500,   // ms hold to confirm
+  ITEM:  3000,   // ms per sync item
+  TRAN:   240,   // fade transition ms
+  DESIRE: 10000, // ms auto-No timeout
+  RC:    213.6,  // ring circumference (2π×34)
 };
 
-const STEPS = ['blood', 'month', 'day'];
-
-const DATA = {
-    blood: ['A', 'B', 'O', 'AB'],
-    month: Array.from({ length: 12 }, (_, i) => String(i + 1)),
-    day:   Array.from({ length: 31 }, (_, i) => String(i + 1))
+/* ═══ DATA ═══ */
+const BLOOD   = ['A','B','O','AB'];
+const MONTHS  = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+const DGROUPS = ['1〜10日','11〜20日','21〜31日'];
+const DRANGES = [
+  Array.from({length:10},(_,i)=>String(i+1)),
+  Array.from({length:10},(_,i)=>String(i+11)),
+  Array.from({length:11},(_,i)=>String(i+21)),
+];
+const DESIRES  = ['富を得たいか','人間関係を\n改善したいか','時間が欲しいか'];
+const DLABELS  = ['第一の問い','第二の問い','第三の問い'];
+const DNAMES   = ['富','人間関係','時間'];
+const MSGS = {
+  A:  'あなたの宿命には、精緻な計画性と揺るぎない美意識が刻まれています。',
+  B:  'あなたの宿命には、枠を超えた創造性と独自の直感が宿っています。',
+  O:  'あなたの宿命には、人を惹きつける引力と強靭な実行力が宿っています。',
+  AB: 'あなたの宿命には、相反する二つの力の融合という特異な才能が宿っています。',
 };
 
-const LABELS = {
-    blood: 'あなたの「血液型」を\n見つめてください',
-    month: 'あなたの「誕生月」を\n見つめてください',
-    day:   'あなたの「誕生日」を\n見つめてください'
+/* ═══ STATE ═══ */
+const S = {
+  phase:'intro', step:0, items:[], idx:0,
+  inTr:false, cs:null, itm:null, fok:false,
+  blood:null, month:null, dg:null, day:null,
+  di:0, da:false, dst:0, dtm:null,
+  desires:[null,null,null], manual:false,
 };
 
-/* ════ DOM ════ */
-const video           = document.getElementById('video');
-const canvas          = document.getElementById('iris-canvas');
-const ctx             = canvas.getContext('2d');
-const progressFill    = document.getElementById('progress-fill');
-const progressLabel   = document.getElementById('progress-label');
-const ritualOverlay   = document.getElementById('ritual-overlay');
-const ritualInst      = document.getElementById('ritual-instruction');
-const ritualContainer = document.getElementById('ritual-container');
-const dwellInd        = document.getElementById('dwell-indicator');
+/* ═══ AUDIO ═══ */
+let _ac=null;
+const ac=()=>{ if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)(); return _ac; };
+const initAudio=()=>{ try{ac().resume();}catch(e){} };
+function tone(f,d,v=0.12,t='sine',w=0){
+  try{
+    const ctx=ac(),n=ctx.currentTime+w;
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type=t;o.frequency.value=f;
+    g.gain.setValueAtTime(0,n);
+    g.gain.linearRampToValueAtTime(v,n+.04);
+    g.gain.exponentialRampToValueAtTime(.001,n+d);
+    o.start(n);o.stop(n+d);
+  }catch(e){}
+}
+function sfxOk(){
+  tone(216,2.2,.11);tone(432,2.0,.09,'sine',.06);
+  tone(540,1.7,.06,'sine',.12);tone(648,1.3,.04,'sine',.20);
+  tone(1080,.9,.02,'sine',.30);
+}
+const sfxClose=()=>tone(260,.18,.07);
+const sfxTick =()=>tone(660,.07,.04);
 
-/* ════ フェーズ切替 ════ */
-function showPhase(id) {
-    document.querySelectorAll('.phase').forEach(el => el.classList.remove('active'));
-    document.getElementById('phase-' + id).classList.add('active');
+/* ═══ VIBRATION ═══ */
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
+
+/* ═══ DOM ═══ */
+const $=id=>document.getElementById(id);
+const SCNS=['intro','loading','sync','desire','result','error'];
+function show(n){
+  SCNS.forEach(k=>{ const e=$('s-'+k); if(e)e.classList.toggle('on',k===n); });
+  S.phase=n;
+}
+function setRing(aid,lid,p,lbl){
+  const a=$(aid); if(a)a.style.strokeDashoffset=CFG.RC*(1-Math.min(p,1));
+  const l=$(lid); if(l&&lbl!==undefined)l.textContent=lbl;
+}
+const setAura=on=>$('aura').classList.toggle('on',on);
+function triggerFlash(){const e=$('flash');e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');}
+function setFbar(ok){
+  S.fok=ok;
+  const e=$('fbar');e.textContent=ok?'顔検出中 ◈':'顔検出待機中';e.classList.toggle('on',ok);
+  const m=ok?'':'顔が見えません — 明るい場所でお試しください';
+  const a=$('nf1'),b=$('nf2');if(a)a.textContent=m;if(b)b.textContent=ok?'':'顔が見えません';
+}
+function buildDots(cur,tot){
+  const c=$('prog');c.innerHTML='';
+  for(let i=0;i<tot;i++){const d=document.createElement('div');d.className='dot'+(i<cur?' done':i===cur?' cur':'');c.appendChild(d);}
 }
 
-/* ════ カメラ ════ */
-document.getElementById('start-btn').addEventListener('click', async () => {
-    showPhase('scanner');
-    state.phase = 'scanning';
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-        });
-        video.srcObject = stream;
-        await new Promise(res => { video.onloadedmetadata = res; });
-        video.play();
-        runFaceMesh();
-    } catch (e) {
-        const b = document.getElementById('error-banner');
-        b.textContent = 'カメラへのアクセスを許可してください';
-        b.style.display = 'block';
-        setTimeout(() => { b.style.display = 'none'; }, 4000);
-        showPhase('landing');
-        state.phase = 'landing';
+/* ═══ STARS ═══ */
+function buildStars(){
+  const c=$('sf');
+  for(let i=0;i<55;i++){
+    const s=document.createElement('div');s.className='star';
+    const z=(Math.random()*1.8+.4).toFixed(1);
+    s.style.cssText=`width:${z}px;height:${z}px;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--d:${(Math.random()*6+2).toFixed(1)}s;--dl:${(Math.random()*6).toFixed(1)}s;--op:${(Math.random()*.5+.08).toFixed(2)};`;
+    c.appendChild(s);
+  }
+}
+
+/* ═══ SYNC FLOW ═══ */
+function beginSync(step,items,label){
+  S.step=step;S.items=items;S.idx=0;S.cs=null;S.inTr=false;
+  if(S.itm){clearTimeout(S.itm);S.itm=null;}
+  show('sync');
+  $('sLabel').textContent=label;
+  buildDots(step,4);
+  setRing('sArc','sLbl',0,'閉眼\n待機');
+  setAura(false);
+  showItem(true);
+}
+
+function showItem(first){
+  if(S.phase!=='sync')return;
+  S.inTr=true;S.cs=null;
+  setRing('sArc','sLbl',0,'閉眼\n待機');setAura(false);
+  const el=$('sBig');
+  const activate=()=>{
+    el.textContent=S.items[S.idx];
+    el.className='s-big show';S.inTr=false;
+    if(S.itm)clearTimeout(S.itm);
+    S.itm=setTimeout(()=>{S.idx=(S.idx+1)%S.items.length;showItem(false);},CFG.ITEM);
+  };
+  if(first){activate();}
+  else{el.className='s-big hide';setTimeout(activate,CFG.TRAN);}
+}
+
+function lockSync(){
+  if(S.phase!=='sync')return;
+  const chosen=S.items[S.idx];
+  if(S.itm){clearTimeout(S.itm);S.itm=null;}
+  S.cs=null;
+  setRing('sArc','sLbl',1,'開錠\n完了');setAura(false);
+  triggerFlash();vib([600]);sfxOk();
+  setTimeout(()=>resolveSync(chosen),1350);
+}
+
+function resolveSync(v){
+  switch(S.step){
+    case 0: S.blood=v; beginSync(1,MONTHS,'誕生月を同期中'); break;
+    case 1: S.month=v; beginSync(2,DGROUPS,'誕生日グループを開錠中'); break;
+    case 2:{
+      S.dg=v;
+      const gi=DGROUPS.indexOf(v);
+      beginSync(3,DRANGES[Math.max(0,gi)],'誕生日を波長固定中');
+      break;
     }
-});
-
-/* ════ MediaPipe ════ */
-function runFaceMesh() {
-    const fm = new FaceMesh({
-        locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
-    });
-    fm.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-    });
-    fm.onResults(onResults);
-
-    const loop = async () => {
-        if (video.readyState >= 2) await fm.send({ image: video });
-        requestAnimationFrame(loop);
-    };
-    loop();
+    case 3: S.day=v; beginDesire(0); break;
+  }
 }
 
-function onResults(res) {
-    const W = canvas.width  = window.innerWidth;
-    const H = canvas.height = window.innerHeight;
-    ctx.clearRect(0, 0, W, H);
-
-    if (!res.multiFaceLandmarks?.length) {
-        handleLeave(); return;
-    }
-
-    const iris = res.multiFaceLandmarks[0][468];
-    const gx = (1 - iris.x) * W;
-    const gy = iris.y * H;
-
-    drawGuide(gx, gy);
-
-    if (state.phase === 'scanning') {
-        state.scanProgress = Math.min(state.scanProgress + 0.4, 100);
-        const pct = Math.floor(state.scanProgress);
-        progressFill.style.width = pct + '%';
-        progressLabel.textContent = `IRIS SCANNING... ${pct}%`;
-        if (state.scanProgress >= SCAN_START) {
-            state.phase = 'ritual';
-            startStep('blood');
-        }
-    } else if (state.phase === 'ritual') {
-        handleGaze(gx, gy);
-    }
+/* ═══ DESIRE FLOW ═══ */
+function beginDesire(idx){
+  S.di=idx;S.da=false;S.cs=null;S.dst=Date.now();
+  if(S.dtm){clearTimeout(S.dtm);S.dtm=null;}
+  show('desire');
+  $('dLabel').textContent=DLABELS[idx];
+  $('dQ').textContent=DESIRES[idx];
+  setRing('dArc','dLbl',0,'閉眼\n待機');setAura(false);
+  // Timer bar
+  const f=$('tfill');
+  f.style.transition='none';f.style.transform='scaleX(1)';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    f.style.transition=`transform ${CFG.DESIRE}ms linear`;f.style.transform='scaleX(0)';
+  }));
+  S.dtm=setTimeout(()=>{if(!S.da)recordDesire(false);},CFG.DESIRE);
 }
 
-/* ════ 視線判定（グレース期間付き）════ */
-function handleGaze(gx, gy) {
-    const el     = document.elementFromPoint(gx, gy);
-    const target = el?.closest('.gaze-target');
-
-    if (target) {
-        state.gazeLeaveTime = 0; // ターゲット上にいる間はリセット時刻をクリア
-
-        if (state.currentTarget === target) {
-            // 同じターゲットを見続けている
-            const elapsed = Date.now() - state.gazeStartTime;
-            const ratio   = Math.min(elapsed / DWELL_TIME, 1);
-            setBar(target, ratio);
-            setIndicator(ratio);
-            if (elapsed >= DWELL_TIME) confirmSelection(target.dataset.value);
-        } else {
-            // 別のターゲットに視線が移った
-            clearHighlight();
-            state.currentTarget  = target;
-            state.gazeStartTime  = Date.now();
-            target.classList.add('highlight');
-        }
-    } else {
-        handleLeave();
-    }
+function recordDesire(yes){
+  if(S.da)return;S.da=true;
+  if(S.dtm){clearTimeout(S.dtm);S.dtm=null;}
+  S.desires[S.di]=yes;
+  if(yes){
+    setRing('dArc','dLbl',1,'渇望\n記録');setAura(false);
+    triggerFlash();vib([600]);sfxOk();
+    setTimeout(nextDesire,1350);
+  }else{sfxTick();setTimeout(nextDesire,480);}
 }
 
-function handleLeave() {
-    if (!state.currentTarget) return;
+const nextDesire=()=>{const n=S.di+1;if(n<DESIRES.length)beginDesire(n);else displayResult();};
 
-    if (state.gazeLeaveTime === 0) {
-        state.gazeLeaveTime = Date.now();           // 離れた時刻を記録
-    } else if (Date.now() - state.gazeLeaveTime > GRACE_PERIOD) {
-        clearHighlight();                            // 猶予超えたらリセット
-    }
-    // 猶予内ならプログレスを維持（ジッター対策）
+/* ═══ EYE → SYNC ═══ */
+function onSyncEye(closed){
+  if(S.inTr)return;
+  const now=Date.now();
+  if(closed){
+    if(!S.cs){S.cs=now;setAura(true);vib([30,50,30]);sfxClose();}
+    const el=now-S.cs,p=el/CFG.HOLD;
+    setRing('sArc','sLbl',p,'波長\n固定中');
+    if(el>=CFG.HOLD)lockSync();
+  }else{
+    if(S.cs){S.cs=null;setRing('sArc','sLbl',0,'閉眼\n待機');setAura(false);}
+  }
 }
 
-function clearHighlight() {
-    if (state.currentTarget) {
-        state.currentTarget.classList.remove('highlight');
-        setBar(state.currentTarget, 0);
-        state.currentTarget = null;
-    }
-    state.gazeLeaveTime = 0;
-    dwellInd.classList.remove('active');
+/* ═══ EYE → DESIRE ═══ */
+function onDesireEye(closed){
+  if(S.da)return;
+  const now=Date.now();
+  if(closed){
+    if(!S.cs){S.cs=now;setAura(true);vib([30,50,30]);}
+    const el=now-S.cs,p=el/CFG.HOLD;
+    setRing('dArc','dLbl',p,'波長\n固定中');
+    if(el>=CFG.HOLD)recordDesire(true);
+  }else{
+    if(S.cs){S.cs=null;setRing('dArc','dLbl',0,'閉眼\n待機');setAura(false);}
+  }
 }
 
-function setBar(target, ratio) {
-    const bar = target.querySelector('.progress-fill-ring');
-    if (bar) bar.style.transform = `scaleX(${ratio})`;
+/* ═══ RESULT ═══ */
+function displayResult(){
+  show('result');
+  if(S.itm)clearTimeout(S.itm);if(S.dtm)clearTimeout(S.dtm);
+  const rows=[
+    {k:'血液型',v:`${S.blood}型`},
+    {k:'誕生月',v:`${S.month}月`},
+    {k:'誕生日',v:`${S.day}日`},
+    ...S.desires.map((d,i)=>({k:DNAMES[i],v:d===true?'渇望':d===false?'充足':'―'})),
+    {k:'同期状態',v:'✦ 波長固定済',cls:'synced'},
+  ];
+  $('rRows').innerHTML=rows.map(r=>`<div class="r-row"><span class="rk">${r.k}</span><span class="rv${r.cls?' '+r.cls:''}">${r.v}</span></div>`).join('');
+  $('rMsg').innerHTML=`<em>${MSGS[S.blood]||'同期が完了しました。あなたの波長は固定されました。'}</em>`;
+  triggerFlash();vib([200,80,200,80,600]);sfxOk();
+  const fb=$('fbar');fb.textContent='同期完了 ◈';fb.classList.add('on');
 }
 
-function setIndicator(ratio) {
-    if (ratio > 0.05) {
-        dwellInd.classList.add('active');
-        dwellInd.textContent = `● LOCKING... ${Math.floor(ratio * 100)}%`;
-    } else {
-        dwellInd.classList.remove('active');
-    }
+/* ═══ MEDIAPIPE ═══ */
+let faceMesh=null,mp_cam=null;
+const vid=$('videoEl');
+
+function eyeGap(lm){
+  /* Left eye: top=159, bottom=145  |  Right eye: top=386, bottom=374
+     Raw normalized y-distance. Threshold: CFG.EYE = 0.018            */
+  return (Math.abs(lm[159].y-lm[145].y)+Math.abs(lm[386].y-lm[374].y))*.5;
 }
 
-/* ════ 儀式ステップ ════ */
-function startStep(step) {
-    state.ritualStep    = step;
-    state.currentTarget = null;
-    state.gazeLeaveTime = 0;
-
-    ritualContainer.innerHTML   = '';
-    ritualContainer.className   = `gaze-grid grid-${step}`;
-
-    DATA[step].forEach(item => {
-        const div           = document.createElement('div');
-        div.className       = 'gaze-target';
-        div.dataset.value   = item;
-        div.innerHTML       = `<span>${item}</span><div class="progress-fill-ring"></div>`;
-        ritualContainer.appendChild(div);
-    });
-
-    ritualInst.innerHTML = LABELS[step].replace('\n', '<br>');
-    dwellInd.classList.remove('active');
-    ritualOverlay.classList.add('active');
-    ritualOverlay.scrollTop = 0;
+function onFMR(r){
+  if(r.multiFaceLandmarks&&r.multiFaceLandmarks.length>0){
+    setFbar(true);
+    const g=eyeGap(r.multiFaceLandmarks[0]),cl=g<=CFG.EYE;
+    if(S.phase==='sync')  onSyncEye(cl);
+    if(S.phase==='desire')onDesireEye(cl);
+  }else{
+    if(S.fok)setFbar(false);
+    if(S.cs){S.cs=null;setAura(false);}
+  }
 }
 
-function confirmSelection(value) {
-    clearHighlight();
-    state.results[state.ritualStep] = value;
-
-    const next = STEPS[STEPS.indexOf(state.ritualStep) + 1];
-    if (next) {
-        startStep(next);
-    } else {
-        ritualOverlay.classList.remove('active');
-        state.phase = 'loading';
-        showPhase('loading');
-        setTimeout(() => { showPhase('result'); renderResult(); }, 2200);
-    }
+async function loadFM(){
+  $('lt').textContent='MediaPipeを初期化中…';
+  faceMesh=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+  faceMesh.setOptions({maxNumFaces:1,refineLandmarks:false,minDetectionConfidence:.5,minTrackingConfidence:.5});
+  faceMesh.onResults(onFMR);
+  $('lt').textContent='カメラを同期中…';
+  mp_cam=new Camera(vid,{
+    onFrame:async()=>{if(S.phase==='sync'||S.phase==='desire')await faceMesh.send({image:vid});},
+    width:320,height:240,
+  });
+  await mp_cam.start();
+  $('lt').textContent='同期準備完了';
+  await new Promise(r=>setTimeout(r,650));
 }
 
-/* ════ 虹彩ガイド描画（CSS変数は使わない）════ */
-function drawGuide(x, y) {
-    const r = 22;
-    ctx.globalAlpha = 0.7;
-
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = GOLD; ctx.lineWidth = 1; ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(x - r - 6, y); ctx.lineTo(x - r + 4, y);
-    ctx.moveTo(x + r - 4, y); ctx.lineTo(x + r + 6, y);
-    ctx.moveTo(x, y - r - 6); ctx.lineTo(x, y - r + 4);
-    ctx.moveTo(x, y + r - 4); ctx.lineTo(x, y + r + 6);
-    ctx.strokeStyle = GOLD; ctx.lineWidth = 0.8; ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = NEON; ctx.globalAlpha = 0.9; ctx.fill();
-    ctx.globalAlpha = 1;
+/* ═══ CAMERA PERMISSION ═══ */
+async function checkCam(){
+  const opts=[{video:{facingMode:'user'}},{video:true}];
+  for(const o of opts){
+    try{const s=await navigator.mediaDevices.getUserMedia(o);s.getTracks().forEach(t=>t.stop());return true;}catch(e){}
+  }
+  return false;
 }
 
-/* ════ 結果 ════ */
-function renderResult() {
-    const { blood, month, day } = state.results;
-    document.getElementById('result-inner').innerHTML = `
-        <div class="result-header">IRIS RESONANCE — ANALYSIS COMPLETE</div>
-        <h2 class="result-title">照合完了</h2>
-        <p class="result-identity">${blood}型 / ${month}月${day}日生まれ</p>
-        <div class="result-divider"></div>
-        <div class="result-story">
-            <p>私は、孤独だった。</p>
-            <p>でもそれに気づいたのは、<em>星を見つけてから</em>だ。</p>
-            <p>（${blood}型・${month}月${day}日生まれのストーリー本文をここに）</p>
-        </div>
-    `;
+/* ═══ MANUAL FALLBACK ═══ */
+function enableManual(){
+  S.manual=true;
+  const b=$('btnM');b.classList.add('vis');b.title='目を閉じる代わりにタップして選択';
 }
+function manualSel(){
+  if(S.phase==='sync')  lockSync();
+  if(S.phase==='desire')recordDesire(true);
+}
+
+/* ═══ RESET ═══ */
+function resetAll(){
+  if(S.itm)clearTimeout(S.itm);if(S.dtm)clearTimeout(S.dtm);
+  Object.assign(S,{phase:'intro',step:0,items:[],idx:0,inTr:false,cs:null,itm:null,fok:false,
+    blood:null,month:null,dg:null,day:null,di:0,da:false,dst:0,dtm:null,desires:[null,null,null]});
+  setAura(false);
+  const fb=$('fbar');fb.textContent='顔検出待機中';fb.classList.remove('on');
+  show('intro');
+}
+
+/* ═══ START ═══ */
+async function startRitual(){
+  initAudio();
+  show('loading');$('lt').textContent='儀式の扉を開いています…';
+  const ok=await checkCam();
+  if(!ok){show('error');$('eTxt').textContent='カメラへのアクセスが拒否されました。\nブラウザ設定でカメラを許可してから\n再度お試しください。';return;}
+  try{await loadFM();}
+  catch(e){console.warn('[未来ノート] MediaPipe失敗 → 手動モードで起動',e);enableManual();$('lt').textContent='手動モードで起動中…';await new Promise(r=>setTimeout(r,800));}
+  beginSync(0,BLOOD,'血液型を同期中');
+}
+
+/* ═══ EVENTS ═══ */
+$('btnStart').addEventListener('click',startRitual);
+$('btnRedo').addEventListener('click',resetAll);
+$('btnRetry').addEventListener('click',resetAll);
+$('btnM').addEventListener('click',manualSel);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.cs){S.cs=null;setAura(false);}});
+
+/* ═══ INIT ═══ */
+buildStars();
 </script>
 </body>
 </html>
