@@ -1,250 +1,1272 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Potential Data Scanner V6</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-    <style>
-        :root {
-            --bg-color: #000;
-            --accent: #00ff88;
-            --neon-blue: #00e5ff;
-            --neon-pink: #ff007f;
-            --font-sys: 'Courier New', Courier, monospace;
-        }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-color); color: var(--accent); font-family: var(--font-sys); overflow: hidden; }
-        
-        #camera-container { position: absolute; inset: 0; z-index: 1; transition: transform 2s cubic-bezier(0.5, 0, 0.2, 1), opacity 1.5s; transform-origin: 50% 50%; }
-        .input_video { display: none; }
-        .output_canvas { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
-        
-        .screen { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); transition: opacity 0.5s; }
-        .hidden { opacity: 0; pointer-events: none !important; }
-        
-        h1 { font-size: 1.2rem; letter-spacing: 5px; text-shadow: 0 0 10px var(--accent); margin-bottom: 30px; }
-        .btn { padding: 15px 40px; border: 1px solid var(--accent); background: rgba(0,255,136,0.1); color: var(--accent); cursor: pointer; letter-spacing: 3px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>NEURAL DIVE — 潜在意識解析エンジン</title>
+<style>
+/* ============================================================
+   RESET & VARIABLES
+============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* Scanning UI */
-        #hud-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-        #scan-progress-bar { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 200px; height: 2px; background: rgba(255,255,255,0.1); }
-        #scan-progress-fill { height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 0.1s; }
+:root {
+  --c: #00ff41;          /* neon green */
+  --p: #ff2d78;          /* neon pink */
+  --b: #00f5ff;          /* neon cyan/blue */
+  --y: #ffe600;          /* neon yellow */
+  --bg: #000000;
+  --dim: rgba(0,245,255,.08);
+}
 
-        /* Transition */
-        #flash { position: absolute; inset: 0; background: #fff; z-index: 100; opacity: 0; pointer-events: none; }
+html, body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--c);
+  font-family: 'Courier New', Courier, monospace;
+  -webkit-text-size-adjust: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: none;
+}
 
-        /* Word Space */
-        #word-container { position: absolute; inset: 0; z-index: 20; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); background: #000; padding: 20px; }
-        .word-cell { display: flex; align-items: center; justify-content: center; }
-        .word { font-size: 1.8rem; color: #fff; font-family: sans-serif; font-weight: 200; letter-spacing: 4px; opacity: 0; animation: fadeWord 1.2s forwards; }
-        @keyframes fadeWord { to { opacity: 1; } }
+/* CRT scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,.06) 2px,
+    rgba(0,0,0,.06) 4px
+  );
+  pointer-events: none;
+}
 
-        /* Clinical Result */
-        #screen-result { justify-content: flex-start; padding: 40px 20px; overflow-y: auto; background: #000; z-index: 150; }
-        .result-box { width: 100%; max-width: 450px; text-align: left; }
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px; }
-        .data-card { border: 1px solid #222; padding: 10px; background: #050505; }
-        .data-label { font-size: 0.6rem; color: #666; margin-bottom: 5px; }
-        .data-val { font-size: 0.9rem; color: var(--accent); }
-        .section-title { font-size: 0.7rem; color: var(--neon-blue); border-bottom: 1px solid #222; padding-bottom: 5px; margin: 20px 0 10px; }
-        .factor-word { font-size: 1.2rem; color: #fff; margin-bottom: 5px; border-left: 3px solid var(--accent); padding-left: 10px; }
-        .factor-desc { font-size: 0.8rem; color: #999; line-height: 1.6; margin-bottom: 15px; }
-    </style>
+/* ============================================================
+   SCREEN MANAGEMENT
+============================================================ */
+.screen {
+  position: fixed; inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.screen.active { display: flex; }
+
+/* ============================================================
+   BOOT SCREEN
+============================================================ */
+#screen-boot { background: #000; gap: 0; }
+
+.boot-logo {
+  font-size: clamp(32px,9vw,72px);
+  font-weight: 900;
+  letter-spacing: .35em;
+  color: var(--b);
+  text-shadow: 0 0 8px var(--b), 0 0 25px var(--b), 0 0 60px rgba(0,245,255,.4);
+  animation: flicker 5s ease-in-out infinite;
+  margin-bottom: 4px;
+}
+.boot-sub {
+  font-size: clamp(7px,2vw,11px);
+  letter-spacing: .5em;
+  color: var(--p);
+  text-shadow: 0 0 8px var(--p);
+  margin-bottom: 32px;
+}
+.boot-log {
+  width: min(90vw,480px);
+  font-size: clamp(9px,2.2vw,12px);
+  color: #444;
+  line-height: 1.9;
+  text-align: left;
+  min-height: 200px;
+}
+.boot-line { opacity: 0; animation: fadein .05s forwards; }
+.boot-line.ok::after  { content: ' [OK]';      color: var(--c); }
+.boot-line.warn::after { content: ' [CAUTION]'; color: #ff9500; }
+.boot-line.err::after  { content: ' [ANOMALY]'; color: var(--p); }
+
+#boot-btn {
+  margin-top: 28px;
+  padding: 13px 44px;
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--b);
+  font-family: inherit;
+  font-size: clamp(11px,2.5vw,14px);
+  letter-spacing: .35em;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--b);
+  box-shadow: 0 0 16px rgba(0,245,255,.2), inset 0 0 12px rgba(0,245,255,.05);
+  opacity: 0;
+  transition: opacity .4s, box-shadow .3s, background .3s;
+}
+#boot-btn.visible { opacity: 1; }
+#boot-btn:hover {
+  background: rgba(0,245,255,.08);
+  box-shadow: 0 0 30px var(--b), inset 0 0 20px rgba(0,245,255,.1);
+}
+
+/* ============================================================
+   SCAN SCREEN
+============================================================ */
+#screen-scan { background: #000; }
+
+#scan-video {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: .55;
+  transform: scaleX(-1);
+  z-index: 1;
+}
+#hud-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+.scan-ui {
+  position: fixed; inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5vh 6vw 8vh;
+  pointer-events: none;
+}
+.scan-top { text-align: center; }
+.scan-title {
+  font-size: clamp(14px,3.5vw,22px);
+  letter-spacing: .55em;
+  color: var(--b);
+  text-shadow: 0 0 12px var(--b);
+}
+#scan-status {
+  font-size: clamp(9px,2vw,12px);
+  letter-spacing: .35em;
+  color: var(--c);
+  text-shadow: 0 0 6px var(--c);
+  margin-top: 6px;
+  min-height: 18px;
+}
+.scan-bottom { width: 100%; }
+.pbar-bg {
+  width: 100%;
+  height: 1px;
+  background: #111;
+}
+.pbar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--b);
+  box-shadow: 0 0 8px var(--b);
+  transition: width .12s linear;
+}
+#scan-pct {
+  text-align: center;
+  font-size: clamp(8px,1.8vw,10px);
+  color: rgba(0,245,255,.4);
+  letter-spacing: .4em;
+  margin-top: 6px;
+}
+
+/* corner brackets */
+.corners { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.corner {
+  position: absolute;
+  width: 22px; height: 22px;
+  border-color: rgba(0,245,255,.5);
+  border-style: solid;
+}
+.corner.tl { top: 12px; left: 12px; border-width: 1px 0 0 1px; }
+.corner.tr { top: 12px; right: 12px; border-width: 1px 1px 0 0; }
+.corner.bl { bottom: 12px; left: 12px; border-width: 0 0 1px 1px; }
+.corner.br { bottom: 12px; right: 12px; border-width: 0 1px 1px 0; }
+
+/* ============================================================
+   DIVE TRANSITION
+============================================================ */
+#screen-dive { background: #000; z-index: 50; }
+#dive-canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+/* ============================================================
+   SAMPLE SCREEN
+============================================================ */
+#screen-sample { background: #000; cursor: none; }
+
+#sample-video {
+  position: fixed;
+  width: 1px; height: 1px;
+  left: -100px; top: -100px;
+  opacity: 0;
+  z-index: -1;
+}
+
+#word-grid {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  padding: 6vw 4vw;
+  gap: 0;
+}
+.wc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(13px,3.5vw,28px);
+  font-weight: 900;
+  color: rgba(255,255,255,.9);
+  letter-spacing: .04em;
+  transition: none;
+  animation: wfloat var(--fd,4s) ease-in-out infinite;
+  animation-delay: var(--dd,0s);
+}
+
+#sample-hdr {
+  position: fixed;
+  top: 2vh; left: 50%; transform: translateX(-50%);
+  z-index: 5; pointer-events: none;
+  font-size: clamp(7px,1.5vw,9px);
+  letter-spacing: .5em;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+#timer-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%; height: 2px;
+  background: #0a0a0a;
+  z-index: 5;
+}
+#timer-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--p);
+  box-shadow: 0 0 6px var(--p);
+  transform-origin: left;
+  transition: width .5s linear;
+}
+
+/* ============================================================
+   RESULT SCREEN
+============================================================ */
+#screen-result {
+  background: #000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+#screen-result::-webkit-scrollbar { width: 2px; }
+#screen-result::-webkit-scrollbar-track { background: #000; }
+#screen-result::-webkit-scrollbar-thumb { background: rgba(0,245,255,.2); }
+
+.rc {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 7vh 6vw 80px;
+}
+
+.r-hdr { text-align: center; margin-bottom: 32px; }
+.r-sid {
+  font-size: clamp(7px,1.6vw,9px);
+  color: #1f1f1f;
+  letter-spacing: .5em;
+  margin-bottom: 6px;
+}
+.r-type {
+  font-size: clamp(26px,7vw,52px);
+  font-weight: 900;
+  color: var(--b);
+  text-shadow: 0 0 16px var(--b), 0 0 40px rgba(0,245,255,.5);
+  letter-spacing: .2em;
+  line-height: 1;
+}
+.r-arch {
+  font-size: clamp(11px,2.8vw,16px);
+  color: var(--p);
+  text-shadow: 0 0 8px var(--p);
+  letter-spacing: .25em;
+  margin-top: 6px;
+}
+
+.r-section {
+  margin: 24px 0;
+  padding-left: 14px;
+  border-left: 1px solid #0f0f0f;
+}
+.r-stitle {
+  font-size: clamp(7px,1.6vw,9px);
+  letter-spacing: .55em;
+  color: #252525;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.fi { margin: 14px 0; }
+.fi-word {
+  font-size: clamp(15px,4vw,22px);
+  font-weight: 900;
+  color: var(--c);
+  text-shadow: 0 0 8px rgba(0,255,65,.5);
+  letter-spacing: .05em;
+}
+.fi-f {
+  font-size: clamp(9px,2.2vw,12px);
+  color: #777;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.fi-f::before { content: '▸ '; color: #333; }
+.fi-b {
+  font-size: clamp(9px,2.2vw,12px);
+  color: var(--p);
+  opacity: .8;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.fi-b::before { content: '▾ '; color: #441122; }
+
+.r-sup .fi-word { color: #1a1a1a; text-shadow: none; }
+.r-sup .fi-f    { color: #2a2a2a; }
+.r-sup .fi-b    { color: #3d1122; }
+
+.phys {
+  border: 1px solid #0d0d0d;
+  padding: 16px;
+  margin: 20px 0;
+  font-size: clamp(8px,2vw,11px);
+  line-height: 2.1;
+  color: #2a2a2a;
+  letter-spacing: .08em;
+}
+.phys span { color: var(--b); }
+
+.compat { text-align: center; margin: 28px 0 20px; }
+.compat-n {
+  font-size: clamp(40px,12vw,80px);
+  font-weight: 900;
+  color: var(--p);
+  text-shadow: 0 0 20px var(--p), 0 0 50px rgba(255,45,120,.4);
+  line-height: 1;
+}
+.compat-l {
+  font-size: clamp(7px,1.8vw,9px);
+  color: #222;
+  letter-spacing: .55em;
+  margin-top: 5px;
+}
+
+.r-desc {
+  font-size: clamp(9px,2.2vw,12px);
+  color: #2e2e2e;
+  line-height: 2;
+  margin: 16px 0 24px;
+  letter-spacing: .05em;
+}
+.r-desc .hi { color: var(--c); }
+.r-desc .lo { color: #111; }
+
+.cta-box {
+  border: 1px solid rgba(0,245,255,.12);
+  padding: 24px 20px;
+  margin: 24px 0;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.cta-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,245,255,.04), transparent);
+  pointer-events: none;
+}
+.cta-lbl {
+  font-size: clamp(7px,1.6vw,9px);
+  letter-spacing: .55em;
+  color: #222;
+  margin-bottom: 10px;
+}
+.cta-txt {
+  font-size: clamp(10px,2.3vw,13px);
+  color: #555;
+  line-height: 1.9;
+  margin-bottom: 18px;
+}
+.cta-txt strong { color: var(--y); text-shadow: 0 0 8px rgba(255,230,0,.4); }
+.cta-txt em { color: #2a2a2a; font-style: normal; font-size: .9em; }
+
+.cta-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--b);
+  font-family: inherit;
+  font-size: clamp(10px,2.3vw,13px);
+  letter-spacing: .3em;
+  cursor: pointer;
+  text-decoration: none;
+  text-shadow: 0 0 8px var(--b);
+  box-shadow: 0 0 12px rgba(0,245,255,.2);
+  transition: all .3s;
+  position: relative;
+  z-index: 1;
+}
+.cta-btn:hover { background: rgba(0,245,255,.08); box-shadow: 0 0 28px var(--b); }
+
+.retry-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid #111;
+  color: #222;
+  font-family: inherit;
+  font-size: clamp(8px,1.8vw,10px);
+  letter-spacing: .3em;
+  cursor: pointer;
+  transition: all .3s;
+}
+.retry-btn:hover { color: #444; border-color: #333; }
+
+/* ============================================================
+   KEYFRAMES
+============================================================ */
+@keyframes flicker {
+  0%,93%,100%{ opacity:1; }
+  94%{ opacity:.3; }
+  95%{ opacity:1; }
+  97%{ opacity:.15; }
+  98%{ opacity:.9; }
+}
+@keyframes fadein { to { opacity:1; } }
+@keyframes wfloat {
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-5px); }
+}
+@keyframes countup {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes glitch {
+  0%   { clip-path: inset(0 0 100% 0); transform: translate(-2px,0); }
+  10%  { clip-path: inset(40% 0 50% 0); transform: translate(2px,0); filter: hue-rotate(90deg); }
+  20%  { clip-path: inset(80% 0 5% 0); transform: translate(-1px,0); }
+  30%  { clip-path: inset(10% 0 85% 0); transform: translate(0,0); }
+  100% { clip-path: inset(0 0 0 0); transform: translate(0,0); filter: none; }
+}
+</style>
 </head>
 <body>
 
-<div id="container">
-    <div id="camera-container">
-        <video class="input_video" playsinline></video>
-        <canvas class="output_canvas"></canvas>
-    </div>
-    
-    <div id="hud-overlay" class="hidden">
-        <div id="scan-progress-bar"><div id="scan-progress-fill"></div></div>
-    </div>
-
-    <div id="word-container" class="hidden"></div>
-    <div id="flash"></div>
-
-    <div id="screen-boot" class="screen">
-        <h1>NEURAL DIVE</h1>
-        <p style="text-align:center; color:#666; font-size:0.8rem;">瞳をスキャンし、深層意識の宇宙へダイブします。</p>
-        <button class="btn" onclick="startSystem()">INITIALIZE</button>
-    </div>
-
-    <div id="screen-result" class="screen hidden">
-        <h1>DECODED LOG</h1>
-        <div class="result-box">
-            <div class="data-grid">
-                <div class="data-card"><div class="data-label">IRIS COLOR</div><div class="data-val" id="res-iris">---</div></div>
-                <div class="data-card"><div class="data-label">SYMMETRY</div><div class="data-val" id="res-asym">---</div></div>
-            </div>
-            
-            <div class="section-title">DETECTIONS</div>
-            <div id="res-list"></div>
-
-            <div class="section-title">FINAL ARCHETYPE</div>
-            <div id="res-type" style="font-size:1.5rem; color:var(--neon-blue);">---</div>
-            <button class="btn" style="width:100%; margin-top:30px;" onclick="location.reload()">再試行</button>
-        </div>
-    </div>
+<!-- ===== BOOT ===== -->
+<div id="screen-boot" class="screen active">
+  <div class="boot-logo">NEURAL DIVE</div>
+  <div class="boot-sub">SUBCONSCIOUS PROFILING ENGINE · v4.2.1</div>
+  <div class="boot-log" id="boot-log"></div>
+  <button id="boot-btn" onclick="startScan()">INITIALIZE SCAN</button>
 </div>
 
+<!-- ===== SCAN ===== -->
+<div id="screen-scan" class="screen">
+  <video id="scan-video" playsinline autoplay muted></video>
+  <canvas id="hud-canvas"></canvas>
+  <div class="corners">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+  </div>
+  <div class="scan-ui">
+    <div class="scan-top">
+      <div class="scan-title">IRIS SCANNING</div>
+      <div id="scan-status">ACQUIRING TARGET...</div>
+    </div>
+    <div class="scan-bottom">
+      <div class="pbar-bg"><div class="pbar-fill" id="scan-pbar"></div></div>
+      <div id="scan-pct">0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DIVE ===== -->
+<div id="screen-dive" class="screen">
+  <canvas id="dive-canvas"></canvas>
+</div>
+
+<!-- ===== SAMPLE ===== -->
+<div id="screen-sample" class="screen">
+  <video id="sample-video" playsinline autoplay muted></video>
+  <div id="sample-hdr">NEURAL DIVE · SUBCONSCIOUS SAMPLING IN PROGRESS</div>
+  <div id="word-grid"></div>
+  <div id="timer-bar"><div id="timer-fill"></div></div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="screen-result" class="screen">
+  <div class="rc" id="rc"></div>
+</div>
+
+<!-- MediaPipe CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1632578967/camera_utils.js" crossorigin="anonymous"></script>
+
 <script>
-    const wordData = {
-        "自由": { front: "解放と自己決定", back: "責任の放棄と孤独への予感" },
-        "富": { front: "物質的安定", back: "愛されない恐怖の代償" },
-        "愛": { front: "精神的結合", back: "自己欠損を埋める飢餓" },
-        "成功": { front: "自己実現", back: "敗北による存在消滅の恐怖" },
-        "変革": { front: "現状打破", back: "過去の自分への強い嫌悪" },
-        "支配": { front: "環境掌握", back: "無力感への反動的衝動" },
-        "孤独": { back: "社会から断絶される根源的恐怖" },
-        "崩壊": { back: "すべてを無に帰したい破壊願望" },
-        "依存": { back: "一人では存在を維持できない寄生" },
-        "再生": { back: "死への恐怖が反転した生への執着" },
-        "混沌": { back: "秩序への限界と原始的衝動の爆発" },
-        "深淵": { back: "内なる狂気に対する恐れと誘惑" }
+'use strict';
+
+// ============================================================
+// CONFIG — EDIT THIS
+// ============================================================
+const NOTE_URL   = 'https://note.com/maxorange21/n/XXXXXXXXXX'; // ← 新しいnote URLに差し替え
+const NOTE_PRICE = '¥980';
+const SAMPLE_DURATION_MS = 40000; // サンプリング時間（ms）
+
+// ============================================================
+// DATA
+// ============================================================
+const CONCEPTS = [
+  { w:"自由",  f:"解放と自己決定",         b:"責任の放棄と孤独への予感" },
+  { w:"富",    f:"物質的安定と強者の証",   b:"金銭以外で愛されない恐怖" },
+  { w:"愛",    f:"献身と精神的結合",       b:"自己欠損の穴埋めと飢餓状態" },
+  { w:"成功",  f:"自己実現と羨望",         b:"存在価値消失への脅迫観念" },
+  { w:"変革",  f:"現状打破と新天地",       b:"過去の自己への嫌悪と逃避" },
+  { w:"承認",  f:"肯定と所属",             b:"自尊心欠如と評価への隷属" },
+  { w:"安息",  f:"平穏と安定",             b:"競争限界と社会的な死への誘惑" },
+  { w:"支配",  f:"統制と掌握",             b:"無力感に対する反動的渇望" },
+  { w:"情熱",  f:"没頭と燃焼",             b:"日常を紛らわす一過性の発狂" },
+  { w:"知識",  f:"知的好奇心と武装",       b:"無知への恐怖と優越感の源泉" },
+  { w:"美",    f:"理想の具現",             b:"醜い現実からの強迫的な目逸らし" },
+  { w:"調和",  f:"均衡と摩擦回避",         b:"自己主張放棄による生存戦略" },
+  { w:"孤独",  f:"自己回復の時間",         b:"社会的繋がりを絶たれることへの根源的恐怖" },
+  { w:"停滞",  f:"休息と現状維持",         b:"変化に伴う痛みを極端に恐れる精神的硬直" },
+  { w:"虚無",  f:"達観と受容",             b:"すべてが徒労に終わることへの諦めと防衛" },
+  { w:"裏切り",f:"警戒心の維持",           b:"先に自分が裏切ることで傷を最小限にする計算" },
+  { w:"束縛",  f:"制限への反発",           b:"誰かに縛られていたいという歪んだ被保護欲求" },
+  { w:"喪失",  f:"悲しみの予感",           b:"失う前に自ら壊してしまいたい自暴自棄な執着" },
+  { w:"凡庸",  f:"平穏な市民の自覚",       b:"その他大勢に埋没することへの耐え難い嫌悪" },
+  { w:"依存",  f:"他者との繋がり",         b:"自分一人では存在を維持できない精神的寄生" },
+  { w:"崩壊",  f:"秩序の再構築",           b:"すべてをゼロに戻し責任から逃れたい衝動" },
+  { w:"嫉妬",  f:"対抗心と羨望",           b:"手に入らないものを呪うことで自分を守る防衛" },
+  { w:"忘却",  f:"記憶の浄化",             b:"直視できない過去からの永久的な逃亡願望" },
+  { w:"静止",  f:"永遠への憧憬",           b:"未来への期待の完全な消失" },
+  { w:"覚醒",  f:"新たな自分への更新",     b:"現在の自分を偽物と定義する強い自己否定" },
+  { w:"決別",  f:"健全な境界線",           b:"憎しみすら残さないほどの冷徹な関係断絶" },
+  { w:"原点",  f:"自己の再発見",           b:"成長の限界を感じて過去の栄光に縋る退行" },
+  { w:"超越",  f:"限界の突破",             b:"人間らしい泥臭い感情を捨て去りたい脱人間化" },
+  { w:"開錠",  f:"真実の探究",             b:"暴いてはいけない内面への禁断の好奇心" },
+  { w:"再生",  f:"失敗からの復活",         b:"死への恐怖の裏返しとしての病的生への執着" },
+  { w:"混沌",  f:"自由な発想",             b:"秩序による統制への限界と原始的衝動の爆発" },
+  { w:"境界",  f:"適切な距離感",           b:"誰にも踏み込まれたくない絶対的な心の聖域" },
+  { w:"導き",  f:"示唆の希求",             b:"自分の人生の舵取りを任せたいという服従心" },
+  { w:"共鳴",  f:"深いシンクロ",           b:"独りではないと思い込みたい究極の同調圧力" },
+  { w:"深淵",  f:"内奥の探究",             b:"自己の深層にある狂気に対する恐れと誘惑" },
+  { w:"使命",  f:"社会的責任",             b:"自分の存在意義を義務にすり替える自己犠牲" },
+];
+
+const ARCHETYPES = [
+  { code:"VOID-Ω", name:"無限回帰者",  desc:"自己消滅と再生の間を永続的に往復する。崩壊を恐れながら同時に渇望する二律背反の魂。" },
+  { code:"APEX-Σ", name:"頂点侵食者",  desc:"外界への征服衝動と、それを支える内的空白が共鳴する。強さは補填である。" },
+  { code:"ECHO-Λ", name:"反響体",      desc:"他者の感情を鏡のように反射し続け、自己の輪郭が溶けかかっている。" },
+  { code:"VEIL-Δ", name:"遮蔽者",      desc:"幾重もの防衛層が内面へのアクセスを拒絶する。開口は恐怖と同義だ。" },
+  { code:"FLUX-Ψ", name:"流動体",      desc:"自己同一性の不安定さと高い環境適応性が共存する。形を持たないことが戦略である。" },
+  { code:"CORE-Φ", name:"核心保持者",  desc:"外圧に揺らがない内的基準を持つ。その堅固さが孤立を生む。" },
+  { code:"RIFT-Χ", name:"断裂者",      desc:"過去と現在の自己の間に修復不能な亀裂がある。継続性の幻想を棄てている。" },
+  { code:"NODE-Π", name:"結節点",      desc:"関係性の中心に立ちながら誰とも深く繋がれない。すべての線が自分を素通りする。" },
+];
+
+const BOOT_LOG = [
+  { t:"NEURAL DIVE ENGINE v4.2.1 INITIALIZING",          c:"" },
+  { t:"SUBCONSCIOUS MAPPING MODULE............LOADED",    c:"ok" },
+  { t:"IRIS BIOMETRIC SCANNER.................STANDBY",   c:"ok" },
+  { t:"36-CONCEPT LEXICAL DATABASE............MOUNTED",   c:"ok" },
+  { t:"GAZE VECTOR ANALYSIS CORE..............ACTIVE",    c:"ok" },
+  { t:"CLINICAL PSYCHOLOGY ENGINE.............ONLINE",    c:"ok" },
+  { t:"ANOMALY: SELF-AWARENESS SUBROUTINE DETECTED",     c:"err" },
+  { t:"SUPPRESSION PROTOCOL...................BYPASSED",   c:"warn" },
+  { t:"SUBJECT PROFILING MATRIX...............CALIBRATED",c:"ok" },
+  { t:"⚠  DATA ACQUIRED CANNOT BE UNREAD",                c:"warn" },
+  { t:"READY FOR IRIS ACQUISITION",                       c:"" },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let faceMesh    = null;
+let sampleMesh  = null;
+let scanCam     = null;
+let sampleCam   = null;
+let lockFrames  = 0;
+const LOCK_TARGET = 35;
+let scanPct     = 0;
+let eyeCX       = 0.5, eyeCY = 0.5; // eye center in canvas coords (normalized)
+let irisLabel   = 'UNDETERMINED';
+
+let wordScores  = {};
+let wordCells   = [];  // { w, el, rect }
+let gazeX = 0.5, gazeY = 0.5;
+let sampleTimerID = null;
+
+// ============================================================
+// UTILS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function easeInExpo(x) {
+  return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+function runBoot() {
+  const log = document.getElementById('boot-log');
+  log.innerHTML = '';
+  let delay = 400;
+  BOOT_LOG.forEach((item, i) => {
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.className = 'boot-line ' + item.c;
+      d.textContent = '> ' + item.t;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+    }, delay);
+    delay += 100 + Math.random() * 60;
+    if (i === 4) delay += 200;
+  });
+  setTimeout(() => {
+    const btn = document.getElementById('boot-btn');
+    btn.classList.add('visible');
+  }, delay + 300);
+}
+
+// ============================================================
+// SCAN PHASE
+// ============================================================
+async function startScan() {
+  showScreen('screen-scan');
+
+  const video  = document.getElementById('scan-video');
+  const canvas = document.getElementById('hud-canvas');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Camera
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+  } catch {
+    setStatus('CAMERA ACCESS REQUIRED');
+    return;
+  }
+
+  // MediaPipe
+  if (typeof FaceMesh === 'undefined') {
+    // Fallback: simulate scan
+    simulateScan();
+    return;
+  }
+
+  faceMesh = new FaceMesh({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${f}`
+  });
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+  faceMesh.onResults(onScanFrame);
+
+  if (typeof Camera !== 'undefined') {
+    scanCam = new Camera(video, {
+      onFrame: async () => { await faceMesh.send({ image: video }); },
+      width: 640, height: 480
+    });
+    scanCam.start();
+  } else {
+    // Manual loop fallback
+    const loop = async () => {
+      if (!video.paused) await faceMesh.send({ image: video });
+      requestAnimationFrame(loop);
     };
-    const wordSets = [["自由","富","愛","成功","変革","支配"],["孤独","崩壊","依存","再生","混沌","深淵"]];
+    requestAnimationFrame(loop);
+  }
+}
 
-    let wordScores = {};
-    const video = document.querySelector('.input_video');
-    const canvas = document.querySelector('.output_canvas');
-    const ctx = canvas.getContext('2d');
-    const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
-    
-    let state = 'boot';
-    let currentRound = 0;
-    let progress = 0;
-    let eyeTarget = {x:50, y:50, r:20};
+function setStatus(t) {
+  document.getElementById('scan-status').textContent = t;
+}
 
-    faceMesh.setOptions({maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5});
-    faceMesh.onResults(onResults);
+function simulateScan() {
+  // No MediaPipe available — fake the progress
+  irisLabel = 'DARK BROWN';
+  const iv = setInterval(() => {
+    lockFrames++;
+    scanPct = Math.min(100, (lockFrames / LOCK_TARGET) * 100);
+    updatePbar();
+    if (lockFrames >= LOCK_TARGET) {
+      clearInterval(iv);
+      setStatus('LOCK CONFIRMED — INITIATING DEEP DIVE');
+      setTimeout(startDive, 800);
+    }
+  }, 120);
+}
 
-    function startSystem() {
-        document.getElementById('screen-boot').classList.add('hidden');
-        new Camera(video, { onFrame: async () => { await faceMesh.send({image: video}); }, width: 640, height: 480 }).start().then(() => {
-            state = 'scanning';
-            document.getElementById('hud-overlay').classList.remove('hidden');
-        });
+// LEFT eye indices (outline)
+const LE = [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246];
+// RIGHT eye indices (outline)
+const RE = [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398];
+
+function onScanFrame(res) {
+  const canvas = document.getElementById('hud-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!res.multiFaceLandmarks?.length) {
+    lockFrames = Math.max(0, lockFrames - 1);
+    scanPct    = Math.max(0, scanPct - 0.5);
+    updatePbar();
+    setStatus('ACQUIRING TARGET...');
+    return;
+  }
+
+  const lm = res.multiFaceLandmarks[0];
+
+  // Try grab iris color from pixels around iris center
+  if (lockFrames === 15) {
+    detectIrisColor(res);
+  }
+
+  drawHUD(ctx, lm, canvas.width, canvas.height);
+
+  lockFrames++;
+  scanPct = Math.min(100, (lockFrames / LOCK_TARGET) * 100);
+  updatePbar();
+
+  if      (lockFrames < 10)   setStatus('FACE DETECTED — IRIS LOCK SEQUENCE...');
+  else if (lockFrames < 20)   setStatus('MAPPING IRIS TOPOLOGY...');
+  else if (lockFrames < 30)   setStatus('BIOMETRIC SIGNATURE ENCODING...');
+  else if (lockFrames === 30) setStatus('LOCK ACQUIRED — DEEP DIVE IN 3s');
+  else if (lockFrames === LOCK_TARGET) {
+    setStatus('INITIATING SUBCONSCIOUS INTERFACE');
+    scanPct = 100; updatePbar();
+    if (scanCam) scanCam.stop();
+    setTimeout(startDive, 700);
+  }
+}
+
+function updatePbar() {
+  document.getElementById('scan-pbar').style.width = scanPct + '%';
+  document.getElementById('scan-pct').textContent   = Math.floor(scanPct) + '%';
+}
+
+function detectIrisColor() {
+  const labels = ['DARK BROWN','HAZEL','DEEP GREY','AMBER BROWN','DEEP BLACK'];
+  irisLabel = labels[Math.floor(Math.random() * labels.length)];
+}
+
+function drawHUD(ctx, lm, W, H) {
+  // Mirror x: canvas x = (1 - lm.x) * W  (matches mirrored video)
+  const px = l => ({ x: (1 - l.x) * W, y: l.y * H });
+  const t  = Date.now() / 1000;
+
+  const eyes = [
+    { outline: LE, irisC: 468, ring: [469,470,471,472] },
+    { outline: RE, irisC: 473, ring: [474,475,476,477] },
+  ];
+
+  eyes.forEach((eye, ei) => {
+    const ctr = px(lm[eye.irisC]);
+    const pts = eye.ring.map(i => px(lm[i]));
+
+    // Iris radius estimate
+    let r = 0;
+    pts.forEach(p => r += Math.hypot(p.x - ctr.x, p.y - ctr.y));
+    r = (r / pts.length) * 2.8;
+
+    const pulse = 0.7 + 0.3 * Math.sin(t * 4 + ei * 1.5);
+
+    // Outer scan ring (animated)
+    ctx.beginPath();
+    ctx.arc(ctr.x, ctr.y, r * 2.6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(0,245,255,${pulse * 0.25})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Rotating tick ring
+    ctx.save();
+    ctx.translate(ctr.x, ctr.y);
+    ctx.rotate(t * 1.8 * (ei ? -1 : 1));
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+      const [c, s] = [Math.cos(a), Math.sin(a)];
+      ctx.beginPath();
+      ctx.moveTo(c * r * 1.85, s * r * 1.85);
+      ctx.lineTo(c * r * 2.15, s * r * 2.15);
+      ctx.strokeStyle = `rgba(0,245,255,${pulse * 0.7})`;
+      ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+
+    // Hexagon frame (counter-rotating)
+    ctx.save();
+    ctx.translate(ctr.x, ctr.y);
+    ctx.rotate(t * -0.6 + ei * 0.5);
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+      const m = r * 2.45;
+      i === 0 ? ctx.moveTo(Math.cos(a)*m, Math.sin(a)*m)
+              : ctx.lineTo(Math.cos(a)*m, Math.sin(a)*m);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(255,45,120,${pulse * 0.4})`;
+    ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+
+    // Corner nodes
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + t * 0.3;
+      ctx.beginPath();
+      ctx.arc(ctr.x + Math.cos(a) * r * 2.45, ctr.y + Math.sin(a) * r * 2.45, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,245,255,${pulse})`;
+      ctx.fill();
     }
 
-    function onResults(res) {
-        if (state === 'result') return;
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Iris circle
+    ctx.beginPath();
+    ctx.arc(ctr.x, ctr.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.6})`;
+    ctx.lineWidth = 1.5; ctx.stroke();
 
-        if (res.multiFaceLandmarks && res.multiFaceLandmarks[0]) {
-            const lms = res.multiFaceLandmarks[0];
-            const lc = lms[468]; 
-            eyeTarget = { x: lc.x * canvas.width, y: lc.y * canvas.height, r: Math.abs(lms[469].x - lms[471].x) * canvas.width * 2 };
+    // Cross-hair
+    ctx.beginPath();
+    const ch = r * 0.55;
+    ctx.moveTo(ctr.x - ch, ctr.y); ctx.lineTo(ctr.x + ch, ctr.y);
+    ctx.moveTo(ctr.x, ctr.y - ch); ctx.lineTo(ctr.x, ctr.y + ch);
+    ctx.strokeStyle = `rgba(0,255,65,${pulse * 0.35})`;
+    ctx.lineWidth = 0.5; ctx.stroke();
 
-            if (state === 'scanning') {
-                drawIrisHUD(eyeTarget.x, eyeTarget.y, eyeTarget.r);
-                progress += 0.4;
-                document.getElementById('scan-progress-fill').style.width = `${progress}%`;
-                if (progress >= 100) startDive();
-            }
-
-            if (state === 'sampling') {
-                // 視線トラッキング
-                const nose = lms[1];
-                const cx = window.innerWidth/2 + (nose.x - 0.5) * window.innerWidth * -5;
-                const cy = window.innerHeight/2 + (nose.y - 0.5) * window.innerHeight * 5;
-                checkWords(cx, cy);
-            }
-        }
+    // Lock arc (progress)
+    const lockPct = Math.min(1, lockFrames / LOCK_TARGET);
+    if (lockPct > 0) {
+      ctx.beginPath();
+      ctx.arc(ctr.x, ctr.y, r * 3.1, -Math.PI / 2, -Math.PI / 2 + lockPct * Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,45,120,${pulse})`;
+      ctx.lineWidth = 2; ctx.stroke();
     }
 
-    function drawIrisHUD(cx, cy, r) {
-        const t = Date.now() * 0.002;
-        ctx.save();
-        ctx.translate(cx, cy);
-        
-        // メインリング
-        ctx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(0,0, r * 1.5, 0, Math.PI*2); ctx.stroke();
+    // Data readout
+    const dsize = Math.max(7, r * 0.45);
+    ctx.font = `${dsize}px Courier New`;
+    ctx.fillStyle = `rgba(0,245,255,${pulse * 0.5})`;
+    ctx.fillText(
+      `${(t * 100 | 0) % 1000}`.padStart(3,'0'),
+      ctr.x + r * 2.6, ctr.y + r * 0.5
+    );
 
-        // 未来ノート風：回転する目盛り
-        ctx.rotate(t);
-        for(let i=0; i<8; i++) {
-            ctx.rotate(Math.PI/4);
-            ctx.beginPath(); ctx.moveTo(r*1.8, 0); ctx.lineTo(r*2.1, 0);
-            ctx.strokeStyle = i%2===0 ? varColor('--accent') : 'rgba(0,255,136,0.2)';
-            ctx.stroke();
-        }
-        
-        // ターゲット
-        ctx.restore();
-        ctx.strokeStyle = varColor('--accent');
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(cx,cy, 5, 0, Math.PI*2); ctx.stroke();
+    // Store left eye center for dive target
+    if (ei === 0) { eyeCX = ctr.x / W; eyeCY = ctr.y / H; }
+  });
+}
+
+// ============================================================
+// DIVE TRANSITION
+// ============================================================
+function startDive() {
+  // Stop scan camera if running
+  if (scanCam) { try { scanCam.stop(); } catch {} }
+
+  showScreen('screen-dive');
+  const canvas = document.getElementById('dive-canvas');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  const W = canvas.width, H = canvas.height;
+  const cx = eyeCX * W, cy = eyeCY * H;
+  const start = performance.now();
+  const DURATION = 2200;
+
+  function frame(now) {
+    const p  = Math.min(1, (now - start) / DURATION);
+    const ep = easeInExpo(p);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    if (p < 0.72) {
+      // Tunnel rings zooming toward viewer
+      const rings = 10;
+      for (let i = 0; i < rings; i++) {
+        const phase = ((i / rings) + ep * 2.5) % 1;
+        const r     = phase * Math.max(W, H) * 1.5;
+        const alpha = (1 - phase) * (1 - p * 0.6) * 0.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0,245,255,${alpha})`;
+        ctx.lineWidth = 1; ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,45,120,${alpha * 0.4})`;
+        ctx.lineWidth = .5; ctx.stroke();
+      }
+      // Glitch scan lines
+      if (Math.random() < 0.3) {
+        const y = Math.random() * H;
+        const ww = Math.random() * W;
+        ctx.fillStyle = `rgba(0,255,65,${Math.random() * 0.12})`;
+        ctx.fillRect(0, y, ww, 1 + Math.random() * 2);
+      }
+    } else {
+      // White-out
+      const wA = (p - 0.72) / 0.28;
+      ctx.fillStyle = `rgba(255,255,255,${wA})`;
+      ctx.fillRect(0, 0, W, H);
     }
 
-    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+    if (p < 1) requestAnimationFrame(frame);
+    else        setTimeout(startSample, 80);
+  }
+  requestAnimationFrame(frame);
+}
 
-    function startDive() {
-        state = 'dive';
-        document.getElementById('hud-overlay').classList.add('hidden');
-        const container = document.getElementById('camera-container');
-        container.style.transformOrigin = `${(eyeTarget.x/canvas.width)*100}% ${(eyeTarget.y/canvas.height)*100}%`;
-        container.style.transform = 'scale(50)';
-        
-        setTimeout(() => {
-            document.getElementById('flash').style.opacity = 1;
-            setTimeout(() => {
-                container.style.display = 'none';
-                document.getElementById('word-container').classList.remove('hidden');
-                document.getElementById('flash').style.opacity = 0;
-                state = 'sampling';
-                startSampling();
-            }, 600);
-        }, 1000);
-    }
+// ============================================================
+// SAMPLE PHASE
+// ============================================================
+function buildGrid() {
+  const grid     = document.getElementById('word-grid');
+  grid.innerHTML = '';
+  wordCells      = [];
+  wordScores     = {};
 
-    function startSampling() {
-        if (currentRound >= 2) { finish(); return; }
-        renderWords(wordSets[currentRound]);
-        setTimeout(() => { currentRound++; startSampling(); }, 6000);
-    }
+  const shuffled = shuffle(CONCEPTS);
+  shuffled.forEach(c => {
+    wordScores[c.w] = 0;
+    const div = document.createElement('div');
+    div.className  = 'wc';
+    div.textContent = c.w;
+    div.style.setProperty('--fd', rand(3, 5.5) + 's');
+    div.style.setProperty('--dd', (-rand(0, 4)) + 's');
+    grid.appendChild(div);
+    wordCells.push({ w: c.w, el: div, rect: null });
+  });
 
-    function renderWords(set) {
-        const c = document.getElementById('word-container');
-        c.innerHTML = '';
-        set.forEach(w => {
-            const cell = document.createElement('div'); cell.className='word-cell';
-            const el = document.createElement('div'); el.className='word'; el.innerText=w;
-            cell.appendChild(el); c.appendChild(cell);
-            wordScores[w] = 0;
-        });
-    }
+  // Get rects after layout
+  requestAnimationFrame(() => {
+    wordCells.forEach(c => { c.rect = c.el.getBoundingClientRect(); });
+  });
+}
 
-    function checkWords(cx, cy) {
-        document.querySelectorAll('.word').forEach(el => {
-            const r = el.getBoundingClientRect();
-            const dist = Math.hypot(cx - (r.left+r.width/2), cy - (r.top+r.height/2));
-            if (dist < 100) wordScores[el.innerText]++;
-        });
-    }
+async function startSample() {
+  buildGrid();
+  showScreen('screen-sample');
 
-    function finish() {
-        state = 'result';
-        document.getElementById('word-container').classList.add('hidden');
-        const sorted = Object.entries(wordScores).sort((a,b)=>b[1]-a[1]);
-        
-        document.getElementById('res-iris').innerText = "深碧 (Deep Emerald)";
-        document.getElementById('res-asym').innerText = "0.8% (高対称)";
-        document.getElementById('res-type').innerText = "Type: 21-Omega";
-        
-        const list = document.getElementById('res-list');
-        sorted.slice(0,3).forEach(([w, s]) => {
-            const d = wordData[w];
-            list.innerHTML += `<div class="factor-word">${w}</div><div class="factor-desc"><b>[意識]</b> ${d.front || '潜在的反応'}<br><b>[深層]</b> ${d.back}</div>`;
-        });
-        document.getElementById('screen-result').classList.remove('hidden');
+  const video = document.getElementById('sample-video');
+
+  // Reacquire camera
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+  } catch {
+    // No camera: fall back to randomized scoring
+    randomizeScores();
+    startTimer();
+    return;
+  }
+
+  if (typeof FaceMesh === 'undefined') {
+    randomizeScores();
+    startTimer();
+    return;
+  }
+
+  sampleMesh = new FaceMesh({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${f}`
+  });
+  sampleMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+  sampleMesh.onResults(onSampleFrame);
+
+  if (typeof Camera !== 'undefined') {
+    sampleCam = new Camera(video, {
+      onFrame: async () => { await sampleMesh.send({ image: video }); },
+      width: 320, height: 240
+    });
+    sampleCam.start();
+  } else {
+    const loop = async () => {
+      if (!video.paused) await sampleMesh.send({ image: video });
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  startTimer();
+}
+
+function randomizeScores() {
+  // Organic-feeling distribution (not flat random)
+  CONCEPTS.forEach(c => {
+    wordScores[c.w] = Math.pow(Math.random(), 0.7) * 100;
+  });
+}
+
+function onSampleFrame(res) {
+  if (!res.multiFaceLandmarks?.length) return;
+  const lm = res.multiFaceLandmarks[0];
+
+  // Gaze estimation:
+  // 1. Head pose: nose tip (lm[1]) position in frame
+  // 2. Iris offset: iris position relative to eye span
+  const nose = lm[1];
+
+  // Head contribution (mirrored)
+  let hx = 1 - nose.x; // mirror
+  let hy = nose.y;
+
+  // Iris contribution (if available)
+  let ix = hx, iy = hy;
+  if (lm[468] && lm[473]) {
+    const li = lm[468], ri = lm[473];
+    // Left eye: outer=33, inner=133
+    const lo = lm[33], lin = lm[133];
+    const ro = lm[362], rin = lm[263];
+
+    const lewW = Math.abs(lin.x - lo.x) || 0.01;
+    const rewW = Math.abs(rin.x - ro.x) || 0.01;
+
+    const lgx = (li.x - Math.min(lo.x, lin.x)) / lewW;
+    const rgx = (ri.x - Math.min(ro.x, rin.x)) / rewW;
+
+    const rawIx = (lgx + rgx) / 2; // 0=left, 1=right in camera
+    ix = 1 - rawIx; // mirror
+    iy = (li.y + ri.y) / 2;
+  }
+
+  // Blend head pose + iris
+  const bx = hx * 0.6 + ix * 0.4;
+  const by = hy * 0.7 + iy * 0.3;
+
+  // Smooth
+  gazeX = gazeX * 0.75 + bx * 0.25;
+  gazeY = gazeY * 0.75 + by * 0.25;
+
+  // Map to screen
+  const sx = gazeX * window.innerWidth;
+  const sy = gazeY * window.innerHeight;
+
+  // Score words under gaze
+  wordCells.forEach(cell => {
+    if (!cell.rect) return;
+    const margin = 20; // tolerance in px
+    if (sx >= cell.rect.left - margin && sx <= cell.rect.right  + margin &&
+        sy >= cell.rect.top  - margin && sy <= cell.rect.bottom + margin) {
+      wordScores[cell.w] = (wordScores[cell.w] || 0) + 1;
     }
+  });
+}
+
+function startTimer() {
+  const fill  = document.getElementById('timer-fill');
+  const start = Date.now();
+
+  sampleTimerID = setInterval(() => {
+    const elapsed  = Date.now() - start;
+    const remaining = Math.max(0, SAMPLE_DURATION_MS - elapsed);
+    fill.style.width = (remaining / SAMPLE_DURATION_MS * 100) + '%';
+
+    if (elapsed >= SAMPLE_DURATION_MS) {
+      clearInterval(sampleTimerID);
+      endSample();
+    }
+  }, 200);
+}
+
+function endSample() {
+  if (sampleCam) { try { sampleCam.stop(); } catch {} }
+
+  // Ensure scores have some variance even with tracking (add base noise)
+  CONCEPTS.forEach(c => {
+    wordScores[c.w] = (wordScores[c.w] || 0) + Math.random() * 5;
+  });
+
+  const sorted = Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
+  const primary    = sorted.slice(0, 3).map(([w]) => w);
+  const suppressed = sorted.slice(-3).map(([w]) => w);
+
+  showResult(primary, suppressed);
+}
+
+// ============================================================
+// RESULT
+// ============================================================
+function showResult(primaryW, suppressedW) {
+  const archetype = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
+  const compat    = randInt(70, 97);
+  const sid       = 'ND-' + Date.now().toString(36).toUpperCase().slice(-8);
+  const symm      = (randInt(82, 96)) + '.' + randInt(0,9) + '%';
+  const pupil     = rand(3.1, 4.9).toFixed(1) + 'mm';
+  const saccade   = randInt(110, 195) + 'ms';
+  const entropy   = rand(0.68, 0.94).toFixed(3) + ' bits';
+  const fixation  = randInt(165, 295) + 'ms';
+  const pct_rare  = randInt(3, 11);
+
+  const pData = primaryW.map(w => CONCEPTS.find(c => c.w === w));
+  const sData = suppressedW.map(w => CONCEPTS.find(c => c.w === w));
+
+  const fitem = (d, i, sup) => d ? `
+    <div class="fi">
+      <div class="fi-word">[${i+1}] ${d.w}</div>
+      <div class="fi-f">${d.f}</div>
+      <div class="fi-b">${d.b}</div>
+    </div>` : '';
+
+  const html = `
+    <div class="r-hdr">
+      <div class="r-sid">SESSION: ${sid} · PROFILING COMPLETE · ${new Date().toISOString().slice(0,19)}Z</div>
+      <div class="r-type" id="r-type-val">${archetype.code}</div>
+      <div class="r-arch">${archetype.name}</div>
+    </div>
+
+    <div class="phys">
+      IRIS PIGMENTATION&nbsp;: <span>${irisLabel}</span><br>
+      BILATERAL SYMMETRY&nbsp;: <span>${symm}</span><br>
+      PUPIL DILATION IDX&nbsp;: <span>${pupil}</span><br>
+      SACCADE FREQUENCY&nbsp;&nbsp;: <span>${saccade}/event</span><br>
+      GAZE ENTROPY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span>${entropy}</span><br>
+      FIXATION AVG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span>${fixation}</span>
+    </div>
+
+    <div class="r-section">
+      <div class="r-stitle">// PRIMARY ATTENTION FACTORS — 優位注視概念</div>
+      ${pData.map((d,i) => fitem(d,i,false)).join('')}
+    </div>
+
+    <div class="r-section r-sup">
+      <div class="r-stitle">// SUPPRESSED FACTORS — 回避・抑圧概念</div>
+      ${sData.map((d,i) => fitem(d,i,true)).join('')}
+    </div>
+
+    <div class="compat">
+      <div class="compat-n" id="compat-num">0%</div>
+      <div class="compat-l">ARCHETYPE ALIGNMENT COEFFICIENT</div>
+    </div>
+
+    <div class="r-desc">
+      ${archetype.desc}<br><br>
+      あなたの瞳は「<span class="hi">${primaryW[0]}</span>」と「<span class="hi">${primaryW[1]}</span>」を優位に注視し、
+      「<span class="lo">${suppressedW[0]}</span>」と「<span class="lo">${suppressedW[1]}</span>」を系統的に回避した。
+      この注視パターンは統計的に上位 ${pct_rare}% の被験者のみが示す、特異な潜在意識構造を示唆している。
+    </div>
+
+    <div class="cta-box">
+      <div class="cta-lbl">// FULL PROFILING REPORT AVAILABLE</div>
+      <div class="cta-txt">
+        あなたのアーキタイプ <strong>${archetype.code}</strong> を含む
+        <strong>21の属性タイプ</strong>の完全解説と、<br>
+        注視パターンが示す<strong>深層構造の全貌</strong>を有料レポートで開示します。<br><br>
+        <em>※ このセッションデータは閲覧終了後に自動消去されます</em>
+      </div>
+      <a class="cta-btn" href="${NOTE_URL}" target="_blank" rel="noopener">
+        UNLOCK FULL REPORT — ${NOTE_PRICE}
+      </a>
+    </div>
+
+    <button class="retry-btn" onclick="retryAll()">[ RE-ANALYZE — 再スキャン ]</button>
+  `;
+
+  document.getElementById('rc').innerHTML = html;
+  showScreen('screen-result');
+  document.getElementById('screen-result').scrollTop = 0;
+
+  // Count-up animation for compat number
+  animateCompat(compat);
+}
+
+function animateCompat(target) {
+  const el = document.getElementById('compat-num');
+  if (!el) return;
+  let cur = 0;
+  const step = () => {
+    cur = Math.min(target, cur + Math.ceil((target - cur) / 8) + 1);
+    el.textContent = cur + '%';
+    if (cur < target) requestAnimationFrame(step);
+  };
+  setTimeout(step, 400);
+}
+
+// ============================================================
+// RETRY
+// ============================================================
+function retryAll() {
+  // Reset state
+  lockFrames = 0; scanPct = 0;
+  wordScores = {}; wordCells = [];
+  gazeX = 0.5; gazeY = 0.5;
+  irisLabel = 'UNDETERMINED';
+  eyeCX = 0.5; eyeCY = 0.5;
+
+  document.getElementById('scan-pbar').style.width = '0%';
+  document.getElementById('scan-pct').textContent  = '0%';
+  setStatus('ACQUIRING TARGET...');
+
+  showScreen('screen-boot');
+  document.getElementById('boot-btn').classList.remove('visible');
+  setTimeout(runBoot, 50);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', runBoot);
 </script>
 </body>
 </html>
