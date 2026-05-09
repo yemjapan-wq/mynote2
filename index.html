@@ -1,711 +1,328 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>未来ノート ― 体質同期測定</title>
-  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Potential Data Scanner</title>
+    <!-- MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-main: #e0e0e0;
+            --accent: #00ff88;
+            --alert: #ff3366;
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; user-select: none;
+        }
+        #container { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* Video & Canvas */
+        .input_video { display: none; }
+        .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.3; object-fit: cover; z-index: 1; pointer-events: none; }
+        
+        /* UI Overlays */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); transition: opacity 0.5s; }
+        .hidden { opacity: 0; pointer-events: none; }
+        
+        /* Typography & Elements */
+        h1 { font-size: 1.2rem; font-weight: normal; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; text-transform: uppercase; }
+        p { font-size: 0.9rem; line-height: 1.5; text-align: center; max-width: 80%; }
+        .btn { margin-top: 30px; padding: 15px 30px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: inherit; font-size: 1rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn:hover { background: var(--accent); color: var(--bg-color); }
+        
+        /* Word Grid */
+        #word-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+        .word { position: absolute; font-size: 1rem; color: #555; transition: color 0.3s, text-shadow 0.3s; transform: translate(-50%, -50%); }
+        .word.active { color: var(--text-main); text-shadow: 0 0 10px rgba(255,255,255,0.5); font-weight: bold; }
+        
+        /* Gaze Cursor */
+        #gaze-cursor { position: absolute; width: 20px; height: 20px; border: 1px solid var(--accent); border-radius: 50%; transform: translate(-50%, -50%); z-index: 20; pointer-events: none; transition: width 0.2s, height 0.2s; box-shadow: 0 0 10px var(--accent); }
+        #gaze-cursor.focus { width: 40px; height: 40px; border-color: var(--alert); box-shadow: 0 0 15px var(--alert); }
 
-    :root {
-      --bg:      #050810;
-      --gold:    #D4AF37;
-      --gold-lt: #F0D870;
-      --gold-dk: #8B6914;
-      --text:    #E8DCC8;
-      --text-d:  rgba(232,220,200,0.70);
-      --font:    'Shippori Mincho','Hiragino Mincho Pro',serif;
-      --rc:      213.6; /* 2π × 34 */
-    }
-
-    html, body {
-      width: 100%; height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      overflow: hidden;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    #videoEl {
-      position: fixed;
-      width: 1px; height: 1px; opacity: 0.01;
-      top: 0; left: 0; pointer-events: none;
-    }
-
-    #app { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-
-    /* ── Background ── */
-    .bg-r {
-      position: fixed; inset: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 55% 40% at 28% 72%, rgba(212,175,55,.055) 0%, transparent 55%),
-        radial-gradient(ellipse 45% 55% at 72% 28%, rgba(70,50,160,.08)   0%, transparent 55%);
-    }
-    .sf { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-    .star {
-      position: absolute; border-radius: 50%;
-      background: var(--gold-lt); opacity: 0;
-      animation: tw var(--d) ease-in-out infinite;
-      animation-delay: var(--dl);
-    }
-    @keyframes tw { 0%,100%{opacity:0;transform:scale(.7)} 50%{opacity:var(--op);transform:scale(1)} }
-
-    /* ── Frame ── */
-    .frame { position: fixed; inset: 18px; pointer-events: none; border: 1px solid rgba(212,175,55,.12); }
-    .frame .c { position: absolute; width: 22px; height: 22px; border-color: rgba(212,175,55,.55); border-style: solid; }
-    .frame .tl { top:-1px;    left:-1px;  border-width: 2px 0 0 2px; }
-    .frame .tr { top:-1px;    right:-1px; border-width: 2px 2px 0 0; }
-    .frame .br { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
-    .frame .bl { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
-
-    /* ── Screens ── */
-    .sc {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 44px 24px;
-      opacity: 0; pointer-events: none;
-      transition: opacity .75s ease;
-    }
-    .sc.on { opacity: 1; pointer-events: auto; }
-    #s-guide {
-      justify-content: flex-start;
-      overflow-y: auto;
-      padding-top: 52px;
-      padding-bottom: 52px;
-    }
-
-    /* ── INTRO ── */
-    .eyebrow { font-size:.62rem; letter-spacing:.6em; color:var(--text-d); margin-bottom:18px; text-align:center; }
-    .t-main {
-      font-size: clamp(2.4rem,11vw,4.2rem);
-      font-weight: 800; letter-spacing: .28em; text-align: center;
-      background: linear-gradient(165deg, var(--gold-lt) 0%, var(--gold) 48%, var(--gold-dk) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      line-height: 1.25;
-    }
-    .t-sub { font-size:clamp(.9rem,4vw,1.25rem); letter-spacing:.38em; color:rgba(212,175,55,.48); margin-bottom:36px; text-align:center; margin-top:4px; }
-    .intro-desc { font-size:clamp(.82rem,3.5vw,.95rem); color:var(--text); text-align:center; letter-spacing:.1em; line-height:2.3; margin-bottom:44px; max-width:300px; }
-    .btn-r {
-      position:relative; overflow:hidden;
-      background:transparent; border:1px solid var(--gold);
-      color:var(--gold); font-family:var(--font);
-      font-size:.88rem; font-weight:600; letter-spacing:.38em;
-      padding:15px 56px; cursor:pointer;
-      transition:color .3s ease; -webkit-appearance:none;
-    }
-    .btn-r::before {
-      content:''; position:absolute; inset:0;
-      background:var(--gold); transform:translateX(-102%);
-      transition:transform .32s ease;
-    }
-    .btn-r:active::before, .btn-r:hover::before { transform:translateX(0); }
-    .btn-r:active, .btn-r:hover { color:var(--bg); }
-    .btn-r span { position:relative; z-index:1; }
-    .intro-note { margin-top:22px; font-size:.62rem; color:rgba(212,175,55,.38); letter-spacing:.18em; text-align:center; max-width:280px; line-height:1.9; }
-
-    /* ── GUIDE ── */
-    .guide-ttl { font-size:clamp(1rem,4.5vw,1.3rem); font-weight:600; letter-spacing:.2em; color:var(--gold-lt); text-align:center; margin-bottom:32px; }
-    .guide-list { list-style:none; max-width:320px; width:100%; }
-    .guide-list li {
-      display:flex; align-items:flex-start; gap:12px;
-      padding:14px 0; border-bottom:1px solid rgba(212,175,55,.12);
-      font-size:clamp(.82rem,3.8vw,.95rem); line-height:1.85;
-      color:var(--text); letter-spacing:.06em;
-    }
-    .guide-list li:last-child { border-bottom:none; }
-    .guide-num { color:var(--gold); font-size:.8rem; font-weight:600; margin-top:.15em; flex-shrink:0; letter-spacing:0; }
-    .guide-note { margin-top:24px; font-size:.68rem; color:rgba(212,175,55,.55); letter-spacing:.2em; text-align:center; line-height:1.9; max-width:300px; }
-    .guide-sound { margin-bottom:26px; background:rgba(212,175,55,.08); border:1px solid rgba(212,175,55,.28); padding:10px 20px; font-size:.8rem; color:var(--gold); letter-spacing:.18em; text-align:center; }
-
-    /* ── LOADING ── */
-    .lg { font-size:2.2rem; color:rgba(212,175,55,.3); margin-bottom:22px; animation:gr 5s linear infinite; }
-    @keyframes gr { 0%{transform:rotate(0deg);opacity:.2} 25%{opacity:.7} 50%{transform:rotate(180deg);opacity:.2} 75%{opacity:.7} 100%{transform:rotate(360deg);opacity:.2} }
-    .lt { font-size:.72rem; letter-spacing:.42em; color:var(--text-d); animation:pulse 1.8s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
-
-    /* ── SYNC ── */
-    .ph-lbl { font-size:.65rem; letter-spacing:.48em; color:var(--text-d); margin-bottom:16px; text-align:center; text-transform:uppercase; }
-    .s-big {
-      font-size:clamp(4.5rem,24vw,9.5rem);
-      font-weight:800; letter-spacing:.08em; text-align:center;
-      min-height:1.15em; display:flex; align-items:center; justify-content:center;
-      background: linear-gradient(155deg, var(--gold-lt) 0%, var(--gold) 52%, var(--gold-dk) 100%);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-      transition: opacity 240ms ease, transform 240ms ease;
-      will-change: opacity, transform;
-    }
-    .s-big.hide { opacity:0; transform:scale(.88); }
-    .s-big.show { opacity:1; transform:scale(1); }
-
-    /* eye ring */
-    .rw { position:relative; width:74px; height:74px; margin:18px auto 0; }
-    .rsv { width:74px; height:74px; transform:rotate(-90deg); }
-    .rbg { fill:none; stroke:rgba(212,175,55,.1); stroke-width:2.5; }
-    .rarc {
-      fill:none; stroke:var(--gold); stroke-width:2.5; stroke-linecap:round;
-      stroke-dasharray:213.6; stroke-dashoffset:213.6;
-      transition:stroke-dashoffset .1s linear;
-      filter:drop-shadow(0 0 5px var(--gold));
-    }
-    .rlbl {
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      text-align:center; font-size:.52rem;
-      letter-spacing:.06em; line-height:1.6; color:var(--text-d); white-space:pre;
-    }
-
-    .s-instr { font-size:clamp(.78rem,3.5vw,.92rem); color:var(--text); text-align:center; letter-spacing:.14em; line-height:2.2; margin-top:10px; }
-    .nf { min-height:1.1em; font-size:.58rem; letter-spacing:.22em; color:rgba(212,175,55,.28); text-align:center; margin-top:4px; }
-
-    .prog { display:flex; gap:9px; margin-top:28px; }
-    .dot { width:5px; height:5px; border-radius:50%; background:rgba(212,175,55,.18); transition:background .4s,box-shadow .4s; }
-    .dot.done { background:var(--gold); }
-    .dot.cur  { background:var(--gold); box-shadow:0 0 8px var(--gold); animation:db 1s ease-in-out infinite; }
-    @keyframes db { 0%,100%{transform:scale(1)} 50%{transform:scale(1.55)} }
-
-    .btn-m {
-      margin-top:20px; background:none; border:none; cursor:pointer;
-      font-family:var(--font); font-size:.58rem;
-      color:rgba(212,175,55,.18); letter-spacing:.28em; padding:8px;
-      transition:color .3s;
-    }
-    .btn-m:active, .btn-m:hover, .btn-m.vis { color:rgba(212,175,55,.6); }
-
-    /* ── DESIRE ── */
-    .dq { font-size:clamp(1.3rem,6.5vw,2.1rem); font-weight:600; text-align:center; letter-spacing:.1em; line-height:1.95; white-space:pre-line; margin-bottom:26px; }
-    .dopts { display:flex; flex-direction:column; gap:9px; align-items:center; }
-    .dopt { font-size:.78rem; letter-spacing:.14em; color:var(--text); }
-    .dopt strong { color:var(--gold); font-weight:600; }
-    .tbar { width:170px; height:1px; background:rgba(212,175,55,.13); margin-top:26px; overflow:hidden; }
-    .tfill { height:100%; width:100%; background:var(--gold); transform-origin:left; will-change:transform; }
-
-    /* ── RESULT ── */
-    .r-eyebrow { font-size:.58rem; letter-spacing:.6em; color:var(--text-d); margin-bottom:28px; text-align:center; }
-    .r-card { position:relative; border:1px solid rgba(212,175,55,.26); padding:26px 30px; width:min(340px,90vw); }
-    .r-gem { position:absolute; top:-.65em; left:50%; transform:translateX(-50%); background:var(--bg); padding:0 10px; color:var(--gold); font-size:.95rem; }
-    .r-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(212,175,55,.08); }
-    .r-row:last-child { border-bottom:none; }
-    .rk { font-size:.76rem; letter-spacing:.18em; color:var(--text); }
-    .rv { font-size:.88rem; font-weight:600; letter-spacing:.1em; color:var(--gold); }
-    .rv.synced { color:#8EE88E; font-size:.68rem; }
-    .r-msg { margin-top:26px; font-size:.82rem; line-height:2.3; text-align:center; color:var(--text); max-width:310px; letter-spacing:.06em; }
-    .r-msg em { color:var(--text); font-style:normal; }
-    .btn-redo { margin-top:24px; background:none; border:none; cursor:pointer; font-family:var(--font); font-size:.68rem; color:rgba(212,175,55,.28); letter-spacing:.3em; padding:8px; transition:color .3s; }
-    .btn-redo:hover, .btn-redo:active { color:rgba(212,175,55,.7); }
-
-    /* ── ERROR ── */
-    .eglyph { font-size:2rem; color:rgba(180,60,60,.5); margin-bottom:14px; }
-    .etxt { font-size:.78rem; color:rgba(200,100,100,.82); text-align:center; line-height:2.1; letter-spacing:.1em; white-space:pre-line; max-width:280px; }
-    .btn-retry { margin-top:26px; background:none; border:1px solid rgba(212,175,55,.28); color:rgba(212,175,55,.58); font-family:var(--font); font-size:.73rem; letter-spacing:.3em; padding:12px 32px; cursor:pointer; transition:border-color .3s,color .3s; }
-    .btn-retry:hover, .btn-retry:active { border-color:var(--gold); color:var(--gold); }
-
-    /* ── Overlays ── */
-    .aura { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at center, rgba(212,175,55,.15) 0%, transparent 68%); opacity:0; transition:opacity .2s ease; }
-    .aura.on { opacity:1; animation:ab .72s ease-in-out infinite; }
-    @keyframes ab { 0%,100%{opacity:.45} 50%{opacity:1} }
-    .flash { position:fixed; inset:0; pointer-events:none; opacity:0; background:rgba(212,175,55,.22); }
-    .flash.pop { animation:fp .85s ease-out forwards; }
-    @keyframes fp { 0%{opacity:1} 100%{opacity:0} }
-    .fbar { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); font-size:.56rem; letter-spacing:.34em; color:rgba(212,175,55,.18); transition:color .5s; pointer-events:none; white-space:nowrap; }
-    .fbar.on { color:rgba(212,175,55,.5); }
-    #dbg { position:fixed; top:10px; right:10px; font-size:11px; color:#0f0; background:rgba(0,0,0,.7); padding:6px 10px; border-radius:4px; font-family:monospace; pointer-events:none; line-height:1.7; z-index:999; }
-  </style>
+        /* System Logs */
+        #sys-log { position: absolute; bottom: 20px; left: 20px; font-size: 0.7rem; color: #555; text-align: left; z-index: 100; pointer-events: none; }
+        
+        /* Result Screen */
+        .result-data { text-align: left; margin: 20px 0; padding: 20px; border-left: 2px solid var(--accent); background: rgba(255,255,255,0.05); }
+        .result-data span { display: block; margin-bottom: 10px; }
+        .highlight { color: var(--accent); font-weight: bold; }
+    </style>
 </head>
 <body>
 
-<video id="videoEl" playsinline autoplay muted></video>
+<div id="container">
+    <video class="input_video" playsinline></video>
+    <canvas class="output_canvas"></canvas>
+    <div id="gaze-cursor" style="top: 50%; left: 50%; display: none;"></div>
+    
+    <div id="word-container"></div>
 
-<div id="app">
-  <div class="bg-r"></div>
-  <div class="sf" id="sf"></div>
-  <div class="frame">
-    <div class="c tl"></div><div class="c tr"></div>
-    <div class="c br"></div><div class="c bl"></div>
-  </div>
-
-  <!-- INTRO -->
-  <div class="sc on" id="s-intro">
-    <div class="eyebrow">∴ 体質同期システム ∴</div>
-    <h1 class="t-main">未来ノート</h1>
-    <div class="t-sub">体質測定</div>
-    <p class="intro-desc">
-      あなたの血液型・誕生日をAIと同期します<br>
-      念じながら、ゆっくりと目を閉じてください<br>
-      カメラへのアクセスが必要です
-    </p>
-    <button class="btn-r" id="btnStart"><span>測定を開始する</span></button>
-    <div class="intro-note">カメラ映像はお使いの端末内でのみ処理され<br>外部サーバーへの送信は一切行いません</div>
-  </div>
-
-  <!-- GUIDE -->
-  <div class="sc" id="s-guide">
-    <div class="guide-ttl">測定の手順</div>
-    <div class="guide-sound">🔊 音声をオンにしてください</div>
-    <ul class="guide-list">
-      <li>
-        <span class="guide-num">①</span>
-        <span>血液型・誕生月・誕生日の順に画面に表示されます</span>
-      </li>
-      <li>
-        <span class="guide-num">②</span>
-        <span>自分の情報が表示されたら、<strong style="color:var(--gold)">ゆっくり目を閉じてください</strong></span>
-      </li>
-      <li>
-        <span class="guide-num">③</span>
-        <span>同期が完了すると音が鳴ります。目を開けて次の測定に移ってください</span>
-      </li>
-      <li>
-        <span class="guide-num">④</span>
-        <span>最後に3つの質問に答えます。「はい」なら目を閉じ、「いいえ」なら待つだけでOKです</span>
-      </li>
-    </ul>
-    <p class="guide-note">明るい場所でお試しください<br>カメラを顔の正面に向けてお持ちください</p>
-    <button class="btn-r" id="btnGuide" style="margin-top:32px;"><span>測定を始める</span></button>
-  </div>
-
-  <!-- LOADING -->
-  <div class="sc" id="s-loading">
-    <div class="lg">⬡</div>
-    <div class="lt" id="lt">同期システムを起動中…</div>
-  </div>
-
-  <!-- SYNC -->
-  <div class="sc" id="s-sync">
-    <div class="ph-lbl" id="sLabel">血液型を同期中</div>
-    <div class="s-big show" id="sBig">A</div>
-    <div class="nf" id="nf1"></div>
-    <div class="rw">
-      <svg class="rsv" viewBox="0 0 74 74">
-        <circle class="rbg" cx="37" cy="37" r="34"/>
-        <circle class="rarc" id="sArc" cx="37" cy="37" r="34"/>
-      </svg>
-      <div class="rlbl" id="sLbl">閉眼&#10;待機</div>
+    <!-- Phase 1: Boot & Permission -->
+    <div id="screen-boot" class="screen">
+        <h1>System Initialization</h1>
+        <p>このシステムは、あなたの瞳孔の微細な揺らぎと視線ベクトルから、深層心理を統計学的にプロファイリングします。</p>
+        <p style="color: #888; font-size: 0.8rem; margin-top: 10px;">※カメラへのアクセスを許可してください。<br>データは端末内で処理され、外部には送信されません。</p>
+        <button class="btn" onclick="startSystem()">認証開始 (Accept)</button>
     </div>
-    <p class="s-instr">念じながら、ゆっくりと<br>目を閉じてください</p>
-    <div class="prog" id="prog"></div>
-    <button class="btn-m" id="btnM">✦ タップで手動選択</button>
-  </div>
 
-  <!-- DESIRE -->
-  <div class="sc" id="s-desire">
-    <div class="ph-lbl" id="dLabel">第一の問い</div>
-    <div class="dq" id="dQ">富を得たいか</div>
-    <div class="dopts">
-      <div class="dopt"><strong>目を閉じる</strong> → はい（渇望として記録）</div>
-      <div class="dopt"><strong>このまま待つ</strong> → いいえ（充足として記録）</div>
+    <!-- Phase 2: Scanning / Interstitial -->
+    <div id="screen-scan" class="screen hidden">
+        <h1 id="scan-title">ID: 468-477 Refining Iris...</h1>
+        <p>虹彩のロックを完了しました。</p>
+        <p>これより、潜在意識のサンプリングを開始します。<br>画面に現れる概念を見つめてください。</p>
     </div>
-    <div class="rw" style="margin-top:22px;">
-      <svg class="rsv" viewBox="0 0 74 74">
-        <circle class="rbg" cx="37" cy="37" r="34"/>
-        <circle class="rarc" id="dArc" cx="37" cy="37" r="34"/>
-      </svg>
-      <div class="rlbl" id="dLbl">閉眼&#10;待機</div>
-    </div>
-    <div class="tbar"><div class="tfill" id="tfill"></div></div>
-    <div class="nf" id="nf2"></div>
-  </div>
 
-  <!-- RESULT -->
-  <div class="sc" id="s-result">
-    <div class="r-eyebrow">― 同期完了 ―</div>
-    <div class="r-card">
-      <div class="r-gem">◈</div>
-      <div id="rRows"></div>
+    <!-- Phase 3: Results -->
+    <div id="screen-result" class="screen hidden">
+        <h1>Analysis Complete</h1>
+        <p>プロファイリングが完了しました。</p>
+        <div class="result-data">
+            <span>Protocol: <span class="highlight" id="res-type">Type: 00-Null</span></span>
+            <span>Compatibility: <span class="highlight" id="res-percent">0.0%</span></span>
+            <br>
+            <span style="font-size: 0.8rem; color: #888;">[High Attention] <span id="res-high" style="color: #ccc;">...</span></span>
+            <span style="font-size: 0.8rem; color: #888;">[Avoidance] <span id="res-low" style="color: #ccc;">...</span></span>
+        </div>
+        <p style="font-size: 0.8rem; color: #777;">※この生データの解読キー（導き書）は外部プロトコルに格納されています。</p>
+        <button class="btn" onclick="window.location.href='#'">解読キーへアクセス</button>
     </div>
-    <p class="r-msg" id="rMsg"></p>
-    <button class="btn-redo" id="btnRedo">▸ もう一度測定する</button>
-  </div>
 
-  <!-- ERROR -->
-  <div class="sc" id="s-error">
-    <div class="eglyph">⊗</div>
-    <div class="etxt" id="eTxt">エラーが発生しました</div>
-    <button class="btn-retry" id="btnRetry">再試行</button>
-  </div>
+    <div id="sys-log">System Standby...</div>
 </div>
 
-<div class="aura" id="aura"></div>
-<div class="flash" id="flash"></div>
-<div class="fbar" id="fbar">顔検出待機中</div>
-<div id="dbg">待機中</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
 <script>
-'use strict';
+    // --- 1. データ定義 (36のワード) ---
+    const wordSets = [
+        ["自由", "富", "愛", "成功", "変革", "承認", "安息", "支配", "情熱", "知識", "美", "調和"],
+        ["孤独", "停滞", "虚無", "裏切り", "束縛", "喪失", "凡庸", "依存", "崩壊", "嫉妬", "忘却", "静止"],
+        ["覚醒", "決別", "原点", "超越", "開錠", "再生", "混沌", "境界", "導き", "共鳴", "深淵", "使命"]
+    ];
+    let wordScores = {}; 
+    
+    // --- 2. システム状態変数 ---
+    const videoElement = document.querySelector('.input_video');
+    const canvasElement = document.querySelector('.output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const gazeCursor = document.getElementById('gaze-cursor');
+    const wordContainer = document.getElementById('word-container');
+    const sysLog = document.getElementById('sys-log');
+    
+    let isScanning = false;
+    let currentRound = 0;
+    let scanTimer = null;
+    let activeWords = []; // 現在画面に出ているDOM要素
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
 
-/* ═══ CONFIG ═══ */
-const CFG = {
-  EYE:   0.018,  // raw normalized y-gap → closed
-  HOLD:  1500,   // ms hold to confirm
-  ITEM:  3000,   // ms per sync item
-  TRAN:   240,   // fade transition ms
-  DESIRE: 10000, // ms auto-No timeout
-  RC:    213.6,  // ring circumference (2π×34)
-};
+    // スマホブラウザでのキャリブレーション用（顔の動きをカーソルに変換）
+    let baseNoseX = null;
+    let baseNoseY = null;
 
-/* ═══ DATA ═══ */
-const BLOOD   = ['A','B','O','AB'];
-const MONTHS  = ['1','2','3','4','5','6','7','8','9','10','11','12'];
-const DGROUPS = ['1〜10日','11〜20日','21〜31日'];
-const DRANGES = [
-  Array.from({length:10},(_,i)=>String(i+1)),
-  Array.from({length:10},(_,i)=>String(i+11)),
-  Array.from({length:11},(_,i)=>String(i+21)),
-];
-const DESIRES  = ['富を得たいか','人間関係を\n改善したいか','時間が欲しいか'];
-const DLABELS  = ['第一の問い','第二の問い','第三の問い'];
-const DNAMES   = ['富','人間関係','時間'];
-const MSGS = {
-  A:  'あなたの宿命には、精緻な計画性と揺るぎない美意識が刻まれています。',
-  B:  'あなたの宿命には、枠を超えた創造性と独自の直感が宿っています。',
-  O:  'あなたの宿命には、人を惹きつける引力と強靭な実行力が宿っています。',
-  AB: 'あなたの宿命には、相反する二つの力の融合という特異な才能が宿っています。',
-};
+    // --- 3. MediaPipe 初期設定 ---
+    const faceMesh = new FaceMesh({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+    }});
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true, // 虹彩(Iris)の検知をオンにする
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    faceMesh.onResults(onResults);
 
-/* ═══ STATE ═══ */
-const S = {
-  phase:'intro', step:0, items:[], idx:0,
-  inTr:false, cs:null, itm:null, fok:false,
-  blood:null, month:null, dg:null, day:null,
-  di:0, da:false, dst:0, dtm:null,
-  desires:[null,null,null], manual:false,
-};
+    let camera;
 
-/* ═══ AUDIO ═══ */
-let _ac=null;
-const ac=()=>{ if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)(); return _ac; };
-const initAudio=()=>{ try{ac().resume();}catch(e){} };
-function tone(f,d,v=0.12,t='sine',w=0){
-  try{
-    const ctx=ac(),n=ctx.currentTime+w;
-    const o=ctx.createOscillator(),g=ctx.createGain();
-    o.connect(g);g.connect(ctx.destination);
-    o.type=t;o.frequency.value=f;
-    g.gain.setValueAtTime(0,n);
-    g.gain.linearRampToValueAtTime(v,n+.04);
-    g.gain.exponentialRampToValueAtTime(.001,n+d);
-    o.start(n);o.stop(n+d);
-  }catch(e){}
-}
-function sfxOk(){
-  tone(216,2.2,.11);tone(432,2.0,.09,'sine',.06);
-  tone(540,1.7,.06,'sine',.12);tone(648,1.3,.04,'sine',.20);
-  tone(1080,.9,.02,'sine',.30);
-}
-const sfxClose=()=>tone(260,.18,.07);
-const sfxTick =()=>tone(660,.07,.04);
-
-/* ═══ VIBRATION ═══ */
-const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
-
-/* ═══ DOM ═══ */
-const $=id=>document.getElementById(id);
-const SCNS=['intro','guide','loading','sync','desire','result','error'];
-function show(n){
-  SCNS.forEach(k=>{ const e=$('s-'+k); if(e)e.classList.toggle('on',k===n); });
-  S.phase=n;
-}
-function setRing(aid,lid,p,lbl){
-  const a=$(aid); if(a)a.style.strokeDashoffset=CFG.RC*(1-Math.min(p,1));
-  const l=$(lid); if(l&&lbl!==undefined)l.textContent=lbl;
-}
-const setAura=on=>$('aura').classList.toggle('on',on);
-function triggerFlash(){const e=$('flash');e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');}
-function setFbar(ok){
-  S.fok=ok;
-  const e=$('fbar');e.textContent=ok?'顔検出中 ◈':'顔検出待機中';e.classList.toggle('on',ok);
-  const m=ok?'':'顔が見えません — 明るい場所でお試しください';
-  const a=$('nf1'),b=$('nf2');if(a)a.textContent=m;if(b)b.textContent=ok?'':'顔が見えません';
-}
-function buildDots(cur,tot){
-  const c=$('prog');c.innerHTML='';
-  for(let i=0;i<tot;i++){const d=document.createElement('div');d.className='dot'+(i<cur?' done':i===cur?' cur':'');c.appendChild(d);}
-}
-
-/* ═══ STARS ═══ */
-function buildStars(){
-  const c=$('sf');
-  for(let i=0;i<55;i++){
-    const s=document.createElement('div');s.className='star';
-    const z=(Math.random()*1.8+.4).toFixed(1);
-    s.style.cssText=`width:${z}px;height:${z}px;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--d:${(Math.random()*6+2).toFixed(1)}s;--dl:${(Math.random()*6).toFixed(1)}s;--op:${(Math.random()*.5+.08).toFixed(2)};`;
-    c.appendChild(s);
-  }
-}
-
-/* ═══ ROLLING EYE DETECTION ═══
-   非対称更新：目を開けると基準値が上がる、閉じても下がらない   */
-let eyeBaseline = -1;
-let eyeFrameCount = 0;
-const EYE_GRACE    = 20;    // 猶予フレーム
-const ALPHA_OPEN   = 0.12;  // 目が開いたとき（素早く追従）
-const ALPHA_CLOSE  = 0.005; // 目が閉じたとき（ほぼ固定）
-const EYE_RATIO    = 0.80;  // baseの80%未満になったら閉じたと判定
-
-function isEyeClosed(g) {
-  eyeFrameCount++;
-  if (eyeBaseline < 0) eyeBaseline = g;
-
-  // 非対称更新：上がるとき速い、下がるとき遅い
-  if (g > eyeBaseline) {
-    eyeBaseline = eyeBaseline * (1 - ALPHA_OPEN) + g * ALPHA_OPEN;
-  } else {
-    eyeBaseline = eyeBaseline * (1 - ALPHA_CLOSE) + g * ALPHA_CLOSE;
-  }
-
-  if (eyeFrameCount < EYE_GRACE) {
-    $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${eyeBaseline.toFixed(4)}\n猶予中(${eyeFrameCount}/${EYE_GRACE})`;
-    return false;
-  }
-
-  const ratio = eyeBaseline > 0 ? g / eyeBaseline : 1;
-  const closed = ratio < EYE_RATIO;
-  $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${eyeBaseline.toFixed(4)}\nratio:${ratio.toFixed(2)}\n${closed ? '▶ 閉眼' : '開眼'}`;
-  return closed;
-}
-
-function resetEyeHistory() {
-  eyeBaseline = -1;
-  eyeFrameCount = 0;
-}
-
-/* ═══ SYNC FLOW ═══ */
-function beginSync(step,items,label){
-  S.step=step;S.items=items;S.idx=0;S.cs=null;S.inTr=false;
-  if(S.itm){clearTimeout(S.itm);S.itm=null;}
-  show('sync');
-  $('sLabel').textContent=label;
-  buildDots(step,4);
-  setRing('sArc','sLbl',0,'閉眼\n待機');
-  setAura(false);
-  showItem(true);
-}
-
-function showItem(first){
-  if(S.phase!=='sync')return;
-  S.inTr=true;S.cs=null;
-  setRing('sArc','sLbl',0,'閉眼\n待機');setAura(false);
-  const el=$('sBig');
-  const activate=()=>{
-    el.textContent=S.items[S.idx];
-    el.className='s-big show';S.inTr=false;
-    if(S.itm)clearTimeout(S.itm);
-    S.itm=setTimeout(()=>{S.idx=(S.idx+1)%S.items.length;showItem(false);},CFG.ITEM);
-  };
-  if(first){activate();}
-  else{el.className='s-big hide';setTimeout(activate,CFG.TRAN);}
-}
-
-function lockSync(){
-  if(S.phase!=='sync')return;
-  const chosen=S.items[S.idx];
-  if(S.itm){clearTimeout(S.itm);S.itm=null;}
-  S.cs=null;
-  setRing('sArc','sLbl',1,'開錠\n完了');setAura(false);
-  triggerFlash();vib([600]);sfxOk();
-  setTimeout(()=>resolveSync(chosen),1350);
-}
-
-function resolveSync(v){
-  switch(S.step){
-    case 0: S.blood=v; beginSync(1,MONTHS,'誕生月を同期中'); break;
-    case 1: S.month=v; beginSync(2,DGROUPS,'誕生日グループを開錠中'); break;
-    case 2:{
-      S.dg=v;
-      const gi=DGROUPS.indexOf(v);
-      beginSync(3,DRANGES[Math.max(0,gi)],'誕生日を波長固定中');
-      break;
+    // --- 4. メイン処理 ---
+    function startSystem() {
+        document.getElementById('screen-boot').classList.add('hidden');
+        sysLog.innerText = "Initializing Camera...";
+        
+        camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceMesh.send({image: videoElement});
+            },
+            width: 640,
+            height: 480,
+            facingMode: "user"
+        });
+        camera.start().then(() => {
+            document.getElementById('screen-scan').classList.remove('hidden');
+            setTimeout(startSampling, 3000); // 3秒後にサンプリング開始
+        });
     }
-    case 3: S.day=v; beginDesire(0); break;
-  }
-}
 
-/* ═══ DESIRE FLOW ═══ */
-function beginDesire(idx){
-  S.di=idx;S.da=false;S.cs=null;S.dst=Date.now();
-  if(S.dtm){clearTimeout(S.dtm);S.dtm=null;}
-  show('desire');
-  $('dLabel').textContent=DLABELS[idx];
-  $('dQ').textContent=DESIRES[idx];
-  setRing('dArc','dLbl',0,'閉眼\n待機');setAura(false);
-  // Timer bar
-  const f=$('tfill');
-  f.style.transition='none';f.style.transform='scaleX(1)';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    f.style.transition=`transform ${CFG.DESIRE}ms linear`;f.style.transform='scaleX(0)';
-  }));
-  S.dtm=setTimeout(()=>{if(!S.da)recordDesire(false);},CFG.DESIRE);
-}
+    function onResults(results) {
+        // キャンバスサイズの調整
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-function recordDesire(yes){
-  if(S.da)return;S.da=true;
-  if(S.dtm){clearTimeout(S.dtm);S.dtm=null;}
-  S.desires[S.di]=yes;
-  if(yes){
-    setRing('dArc','dLbl',1,'渇望\n記録');setAura(false);
-    triggerFlash();vib([600]);sfxOk();
-    setTimeout(nextDesire,1350);
-  }else{sfxTick();setTimeout(nextDesire,480);}
-}
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const landmarks = results.multiFaceLandmarks[0];
+            
+            // 演出：虹彩の描画 (468-473は右目虹彩、473-478は左目虹彩)
+            canvasCtx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+            canvasCtx.lineWidth = 1;
+            drawIris(landmarks, 468, 472); // 右
+            drawIris(landmarks, 473, 477); // 左
 
-const nextDesire=()=>{const n=S.di+1;if(n<DESIRES.length)beginDesire(n);else displayResult();};
+            if (isScanning) {
+                // スマホ等でWebカメラの正確な視線を追うのは難しいため、
+                // 「鼻の頭（1番）」の動きと顔の傾きをベースに擬似的な視線カーソルを生成する
+                const nose = landmarks[1];
+                
+                if(!baseNoseX) { baseNoseX = nose.x; baseNoseY = nose.y; }
 
-/* ═══ EYE → SYNC ═══ */
-function onSyncEye(closed){
-  if(S.inTr)return;
-  const now=Date.now();
-  if(closed){
-    if(!S.cs){S.cs=now;setAura(true);vib([30,50,30]);sfxClose();}
-    const el=now-S.cs,p=el/CFG.HOLD;
-    setRing('sArc','sLbl',p,'波長\n固定中');
-    if(el>=CFG.HOLD)lockSync();
-  }else{
-    if(S.cs){S.cs=null;setRing('sArc','sLbl',0,'閉眼\n待機');setAura(false);}
-  }
-}
+                // 顔の移動量から画面上のカーソル位置を計算（感度高め）
+                const sensitivity = 3.0;
+                let targetX = window.innerWidth / 2 + ((nose.x - baseNoseX) * window.innerWidth * sensitivity * -1); // 左右反転考慮
+                let targetY = window.innerHeight / 2 + ((nose.y - baseNoseY) * window.innerHeight * sensitivity);
 
-/* ═══ EYE → DESIRE ═══ */
-function onDesireEye(closed){
-  if(S.da)return;
-  const now=Date.now();
-  if(closed){
-    if(!S.cs){S.cs=now;setAura(true);vib([30,50,30]);}
-    const el=now-S.cs,p=el/CFG.HOLD;
-    setRing('dArc','dLbl',p,'波長\n固定中');
-    if(el>=CFG.HOLD)recordDesire(true);
-  }else{
-    if(S.cs){S.cs=null;setRing('dArc','dLbl',0,'閉眼\n待機');setAura(false);}
-  }
-}
+                // スムージング（急激なブレを抑える）
+                cursorX += (targetX - cursorX) * 0.2;
+                cursorY += (targetY - cursorY) * 0.2;
+                
+                // 画面外に出ないように制限
+                cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
+                cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
 
-/* ═══ RESULT ═══ */
-function displayResult(){
-  show('result');
-  if(S.itm)clearTimeout(S.itm);if(S.dtm)clearTimeout(S.dtm);
-  const rows=[
-    {k:'血液型',v:`${S.blood}型`},
-    {k:'誕生月',v:`${S.month}月`},
-    {k:'誕生日',v:`${S.day}日`},
-    ...S.desires.map((d,i)=>({k:DNAMES[i],v:d===true?'渇望':d===false?'充足':'―'})),
-    {k:'同期状態',v:'✦ 波長固定済',cls:'synced'},
-  ];
-  $('rRows').innerHTML=rows.map(r=>`<div class="r-row"><span class="rk">${r.k}</span><span class="rv${r.cls?' '+r.cls:''}">${r.v}</span></div>`).join('');
-  $('rMsg').innerHTML=`<em>${MSGS[S.blood]||'同期が完了しました。あなたの波長は固定されました。'}</em>`;
-  triggerFlash();vib([200,80,200,80,600]);sfxOk();
-  const fb=$('fbar');fb.textContent='同期完了 ◈';fb.classList.add('on');
-}
+                gazeCursor.style.left = `${cursorX}px`;
+                gazeCursor.style.top = `${cursorY}px`;
 
-/* ═══ MEDIAPIPE ═══ */
-let faceMesh=null,mp_cam=null;
-const vid=$('videoEl');
+                checkWordIntersection();
+            }
+        }
+        canvasCtx.restore();
+    }
 
-function eyeGap(lm){
-  /* Left eye: top=159, bottom=145  |  Right eye: top=386, bottom=374
-     Raw normalized y-distance. Threshold: CFG.EYE = 0.018            */
-  return (Math.abs(lm[159].y-lm[145].y)+Math.abs(lm[386].y-lm[374].y))*.5;
-}
+    function drawIris(landmarks, startIdx, endIdx) {
+        canvasCtx.beginPath();
+        for (let i = startIdx; i <= endIdx; i++) {
+            const x = landmarks[i].x * canvasElement.width;
+            const y = landmarks[i].y * canvasElement.height;
+            if (i === startIdx) canvasCtx.moveTo(x, y);
+            else canvasCtx.lineTo(x, y);
+        }
+        canvasCtx.closePath();
+        canvasCtx.stroke();
+    }
 
-function onFMR(r){
-  if(r.multiFaceLandmarks&&r.multiFaceLandmarks.length>0){
-    setFbar(true);
-    const lm = r.multiFaceLandmarks[0];
-    const g  = eyeGap(lm);
-    const cl = isEyeClosed(g);
-    if(S.phase==='sync')   onSyncEye(cl);
-    if(S.phase==='desire') onDesireEye(cl);
-  }else{
-    if(S.fok)setFbar(false);
-    if(S.cs){S.cs=null;setAura(false);}
-  }
-}
+    // --- 5. サンプリング（測定）ロジック ---
+    function startSampling() {
+        document.getElementById('screen-scan').classList.add('hidden');
+        gazeCursor.style.display = 'block';
+        sysLog.innerText = `Sampling Phase ${currentRound + 1}/3...`;
+        isScanning = true;
+        
+        displayWords(wordSets[currentRound]);
+        
+        // 1ラウンド 10秒
+        scanTimer = setTimeout(() => {
+            clearWords();
+            currentRound++;
+            if(currentRound < 3) {
+                startSampling();
+            } else {
+                finishAnalysis();
+            }
+        }, 10000);
+    }
 
-async function loadFM(){
-  $('lt').textContent='システムを初期化中…';
-  faceMesh=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
-  faceMesh.setOptions({maxNumFaces:1,refineLandmarks:false,minDetectionConfidence:.5,minTrackingConfidence:.5});
-  faceMesh.onResults(onFMR);
-  $('lt').textContent='カメラを同期中…';
-  mp_cam=new Camera(vid,{
-    onFrame:async()=>{if(S.phase==='sync'||S.phase==='desire')await faceMesh.send({image:vid});},
-    width:320,height:240,
-  });
-  await mp_cam.start();
-  $('lt').textContent='同期準備完了';
-  await new Promise(r=>setTimeout(r,650));
-}
+    function displayWords(words) {
+        activeWords = [];
+        wordContainer.innerHTML = '';
+        words.forEach(wordText => {
+            // ランダム配置 (画面端を少し避ける)
+            const x = 15 + Math.random() * 70; // 15% ~ 85%
+            const y = 15 + Math.random() * 70;
+            
+            const el = document.createElement('div');
+            el.className = 'word';
+            el.innerText = wordText;
+            el.style.left = `${x}%`;
+            el.style.top = `${y}%`;
+            
+            wordContainer.appendChild(el);
+            
+            if(!wordScores[wordText]) wordScores[wordText] = 0;
+            
+            activeWords.push({
+                element: el,
+                text: wordText,
+                rect: null // 描画後に取得
+            });
+        });
 
-/* ═══ CAMERA PERMISSION ═══ */
-async function checkCam(){
-  const opts=[{video:{facingMode:'user'}},{video:true}];
-  for(const o of opts){
-    try{const s=await navigator.mediaDevices.getUserMedia(o);s.getTracks().forEach(t=>t.stop());return true;}catch(e){}
-  }
-  return false;
-}
+        // DOM描画後にRect取得
+        setTimeout(() => {
+            activeWords.forEach(w => w.rect = w.element.getBoundingClientRect());
+        }, 100);
+    }
 
-/* ═══ MANUAL FALLBACK ═══ */
-function enableManual(){
-  S.manual=true;
-  const b=$('btnM');b.classList.add('vis');b.title='目を閉じる代わりにタップして選択';
-}
-function manualSel(){
-  if(S.phase==='sync')  lockSync();
-  if(S.phase==='desire')recordDesire(true);
-}
+    function clearWords() {
+        wordContainer.innerHTML = '';
+        activeWords = [];
+        baseNoseX = null; // 次のラウンドでセンタリングし直す
+    }
 
-/* ═══ RESET ═══ */
-function resetAll(){
-  if(S.itm)clearTimeout(S.itm);if(S.dtm)clearTimeout(S.dtm);
-  Object.assign(S,{phase:'intro',step:0,items:[],idx:0,inTr:false,cs:null,itm:null,fok:false,
-    blood:null,month:null,dg:null,day:null,di:0,da:false,dst:0,dtm:null,desires:[null,null,null]});
-  resetEyeHistory();
-  setAura(false);
-  const fb=$('fbar');fb.textContent='顔検出待機中';fb.classList.remove('on');
-  show('intro');
-}
+    function checkWordIntersection() {
+        let isFocused = false;
+        activeWords.forEach(w => {
+            if(!w.rect) return;
+            // 当たり判定 (カーソルと単語の距離)
+            const cx = w.rect.left + w.rect.width / 2;
+            const cy = w.rect.top + w.rect.height / 2;
+            const dist = Math.hypot(cursorX - cx, cursorY - cy);
+            
+            if(dist < 50) { // 50px以内なら注視とみなす
+                w.element.classList.add('active');
+                wordScores[w.text] += 1; // スコア加算 (毎フレーム)
+                isFocused = true;
+            } else {
+                w.element.classList.remove('active');
+            }
+        });
 
-/* ═══ START ═══ */
-function startRitual(){
-  initAudio();
-  show('guide');
-}
+        if(isFocused) {
+            gazeCursor.classList.add('focus');
+        } else {
+            gazeCursor.classList.remove('focus');
+        }
+    }
 
-async function startActual(){
-  show('loading');$('lt').textContent='測定を準備しています…';
-  const ok=await checkCam();
-  if(!ok){show('error');$('eTxt').textContent='カメラへのアクセスが拒否されました。\nブラウザ設定でカメラを許可してから\n再度お試しください。';return;}
-  try{
-    await loadFM();
-  }
-  catch(e){
-    console.warn('[未来ノート] MediaPipe失敗 → 手動モードで起動',e);
-    enableManual();
-    $('lt').textContent='手動モードで起動中…';
-    await new Promise(r=>setTimeout(r,800));
-  }
-  resetEyeHistory();
-  beginSync(0,BLOOD,'血液型を同期中');
-}
+    // --- 6. 結果算出 ---
+    function finishAnalysis() {
+        isScanning = false;
+        gazeCursor.style.display = 'none';
+        sysLog.innerText = "Analysis Complete.";
+        camera.stop();
 
-/* ═══ EVENTS ═══ */
-$('btnStart').addEventListener('click',startRitual);
-$('btnGuide').addEventListener('click',startActual);
-$('btnRedo').addEventListener('click',resetAll);
-$('btnRetry').addEventListener('click',resetAll);
-$('btnM').addEventListener('click',manualSel);
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.cs){S.cs=null;setAura(false);}});
+        // スコアのソート
+        const sortedWords = Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
+        
+        // トップ（執着）とワースト（回避）
+        const highest = sortedWords.slice(0, 3).map(w => w[0]).join(", ");
+        const lowest = sortedWords.slice(-3).map(w => w[0]).join(", "); // 全く見なかったもの
 
-/* ═══ INIT ═══ */
-buildStars();
+        // ランダムなType生成（演出用）
+        const types = ["01-Alpha", "07-Sigma", "14-Delta", "21-Omega"];
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const percent = (70 + Math.random() * 28).toFixed(1); // 70.0% ~ 98.0% のそれっぽい数字
+
+        document.getElementById('res-type').innerText = `Type: ${randomType}`;
+        document.getElementById('res-percent').innerText = `${percent}%`;
+        document.getElementById('res-high').innerText = highest;
+        document.getElementById('res-low').innerText = lowest;
+
+        document.getElementById('screen-result').classList.remove('hidden');
+    }
 </script>
 </body>
 </html>
