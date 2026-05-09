@@ -3,58 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Potential Data Scanner V5</title>
+    <title>Potential Data Scanner V6</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         :root {
             --bg-color: #000;
-            --text-main: #fff;
             --accent: #00ff88;
-            --neon-pink: #ff007f;
             --neon-blue: #00e5ff;
+            --neon-pink: #ff007f;
             --font-sys: 'Courier New', Courier, monospace;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg-color); color: var(--accent); font-family: var(--font-sys); overflow: hidden; user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-color); color: var(--accent); font-family: var(--font-sys); overflow: hidden; }
         
-        /* Camera Container for Zoom Effect */
-        #camera-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: transform 2s cubic-bezier(0.5, 0, 0.2, 1), opacity 1.5s ease; transform-origin: 50% 50%; }
+        #camera-container { position: absolute; inset: 0; z-index: 1; transition: transform 2s cubic-bezier(0.5, 0, 0.2, 1), opacity 1.5s; transform-origin: 50% 50%; }
         .input_video { display: none; }
-        .output_canvas { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+        .output_canvas { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
         
-        /* Screens */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); transition: opacity 0.5s; }
+        .screen { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); transition: opacity 0.5s; }
         .hidden { opacity: 0; pointer-events: none !important; }
         
-        h1 { font-size: 1.5rem; letter-spacing: 5px; margin-bottom: 20px; text-transform: uppercase; text-shadow: 0 0 10px var(--accent); }
-        .btn { margin-top: 30px; padding: 15px 40px; border: 1px solid var(--accent); background: rgba(0,255,136,0.1); color: var(--accent); font-size: 1rem; cursor: pointer; letter-spacing: 3px; box-shadow: 0 0 15px rgba(0,255,136,0.3); transition: 0.3s; }
-        .btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 25px var(--accent); }
+        h1 { font-size: 1.2rem; letter-spacing: 5px; text-shadow: 0 0 10px var(--accent); margin-bottom: 30px; }
+        .btn { padding: 15px 40px; border: 1px solid var(--accent); background: rgba(0,255,136,0.1); color: var(--accent); cursor: pointer; letter-spacing: 3px; }
 
-        /* Scanning Phase Elements */
-        #scan-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
-        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); animation: scanDown 3s linear infinite; }
-        @keyframes scanDown { from { top: 0; } to { top: 100%; } }
-        #fake-logs { position: absolute; bottom: 20px; left: 20px; font-size: 0.65rem; color: var(--neon-blue); line-height: 1.5; text-shadow: 0 0 5px var(--neon-blue); opacity: 0.8; }
+        /* Scanning UI */
+        #hud-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+        #scan-progress-bar { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 200px; height: 2px; background: rgba(255,255,255,0.1); }
+        #scan-progress-fill { height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 0.1s; }
 
-        /* Tunnel / Flash Effect */
-        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+        /* Transition */
+        #flash { position: absolute; inset: 0; background: #fff; z-index: 100; opacity: 0; pointer-events: none; }
 
-        /* Word Sampling Phase */
-        #word-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); box-sizing: border-box; padding: 20px; background: #000; }
+        /* Word Space */
+        #word-container { position: absolute; inset: 0; z-index: 20; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); background: #000; padding: 20px; }
         .word-cell { display: flex; align-items: center; justify-content: center; }
-        .word { font-size: 2rem; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 300; letter-spacing: 4px; opacity: 0; animation: fadeWord 1s forwards; text-align: center; }
+        .word { font-size: 1.8rem; color: #fff; font-family: sans-serif; font-weight: 200; letter-spacing: 4px; opacity: 0; animation: fadeWord 1.2s forwards; }
         @keyframes fadeWord { to { opacity: 1; } }
 
-        /* Result Screen */
-        #screen-result { justify-content: flex-start; padding-top: 40px; overflow-y: auto; background: #000; z-index: 100; }
-        .result-box { width: 90%; max-width: 500px; padding: 0 0 40px 0; }
-        .iris-banner { border: 1px solid var(--accent); padding: 10px; margin-bottom: 30px; text-align: center; font-size: 0.9rem; background: rgba(0,255,136,0.05); color: #fff; }
-        .section-title { font-size: 0.75rem; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; margin: 30px 0 15px 0; letter-spacing: 2px; }
-        .factor-item { margin-bottom: 25px; }
-        .factor-word { font-size: 1.3rem; color: #fff; border-left: 3px solid var(--neon-pink); padding-left: 10px; margin-bottom: 8px; }
-        .factor-desc { font-size: 0.85rem; line-height: 1.6; color: #bbb; }
-        .factor-desc b { color: var(--accent); font-weight: normal; }
-        .factor-desc b.deep { color: var(--neon-pink); }
+        /* Clinical Result */
+        #screen-result { justify-content: flex-start; padding: 40px 20px; overflow-y: auto; background: #000; z-index: 150; }
+        .result-box { width: 100%; max-width: 450px; text-align: left; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px; }
+        .data-card { border: 1px solid #222; padding: 10px; background: #050505; }
+        .data-label { font-size: 0.6rem; color: #666; margin-bottom: 5px; }
+        .data-val { font-size: 0.9rem; color: var(--accent); }
+        .section-title { font-size: 0.7rem; color: var(--neon-blue); border-bottom: 1px solid #222; padding-bottom: 5px; margin: 20px 0 10px; }
+        .factor-word { font-size: 1.2rem; color: #fff; margin-bottom: 5px; border-left: 3px solid var(--accent); padding-left: 10px; }
+        .factor-desc { font-size: 0.8rem; color: #999; line-height: 1.6; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -65,307 +60,190 @@
         <canvas class="output_canvas"></canvas>
     </div>
     
-    <div id="scan-overlay" class="hidden">
-        <div class="scan-line"></div>
-        <div id="fake-logs"></div>
+    <div id="hud-overlay" class="hidden">
+        <div id="scan-progress-bar"><div id="scan-progress-fill"></div></div>
     </div>
 
     <div id="word-container" class="hidden"></div>
     <div id="flash"></div>
 
-    <!-- Phase 0: Boot -->
     <div id="screen-boot" class="screen">
-        <h1>NEURAL UPLINK</h1>
-        <p style="color:#aaa; font-size:0.9rem;">視覚神経網をジャックし、<br>潜在意識へのダイブを開始します。</p>
-        <button class="btn" onclick="startSystem()">CONNECT</button>
+        <h1>NEURAL DIVE</h1>
+        <p style="text-align:center; color:#666; font-size:0.8rem;">瞳をスキャンし、深層意識の宇宙へダイブします。</p>
+        <button class="btn" onclick="startSystem()">INITIALIZE</button>
     </div>
 
-    <!-- Phase 4: Result -->
     <div id="screen-result" class="screen hidden">
-        <h1 style="color:#fff; text-shadow:none; font-size:1.2rem;">DECODED PROTOCOL</h1>
+        <h1>DECODED LOG</h1>
         <div class="result-box">
-            <div class="iris-banner">宿命の虹彩属性: <span id="res-iris" style="font-weight:bold; color:var(--accent);">---</span></div>
+            <div class="data-grid">
+                <div class="data-card"><div class="data-label">IRIS COLOR</div><div class="data-val" id="res-iris">---</div></div>
+                <div class="data-card"><div class="data-label">SYMMETRY</div><div class="data-val" id="res-asym">---</div></div>
+            </div>
             
-            <div class="section-title">PRIMARY FACTORS [顕在する渇望]</div>
-            <div id="res-high-list"></div>
+            <div class="section-title">DETECTIONS</div>
+            <div id="res-list"></div>
 
-            <div class="section-title">SUPPRESSED FACTORS [忘れている瞳]</div>
-            <div id="res-low-list"></div>
-
-            <div class="section-title">ASSIGNED ARCHETYPE</div>
-            <div style="font-size: 1.8rem; color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,229,255,0.3);" id="res-type">Type: ---</div>
-            <div style="font-size: 0.8rem; color: #666; margin-top:5px;">COMPATIBILITY: <span id="res-percent">0.0</span>%</div>
-            
-            <button class="btn" style="width:100%; border-color:var(--neon-blue); color:var(--neon-blue);" onclick="window.location.href='#'">解読書へアクセス</button>
+            <div class="section-title">FINAL ARCHETYPE</div>
+            <div id="res-type" style="font-size:1.5rem; color:var(--neon-blue);">---</div>
+            <button class="btn" style="width:100%; margin-top:30px;" onclick="location.reload()">再試行</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- Dictionary ---
     const wordData = {
         "自由": { front: "解放と自己決定", back: "責任の放棄と孤独への予感" },
-        "富": { front: "物質的安定と強者の証", back: "金銭以外で愛されない恐怖" },
-        "愛": { front: "献身と精神的結合", back: "自己欠損の穴埋めと飢餓状態" },
-        "成功": { front: "自己実現と羨望", back: "存在価値消失への脅迫観念" },
-        "変革": { front: "現状打破と新天地", back: "過去の自己への嫌悪と逃避" },
-        "承認": { front: "肯定と所属", back: "自尊心欠如と評価への隷属" },
-        "安息": { front: "平穏と安定", back: "競争限界と社会的な死への誘惑" },
-        "支配": { front: "統制と掌握", back: "無力感に対する反動的渇望" },
-        "情熱": { front: "没頭と燃焼", back: "日常を紛らわす一過性の発狂" },
-        "知識": { front: "知的好奇心と武装", back: "無知への恐怖と優越感の源泉" },
-        "美": { front: "理想の具現", back: "醜い現実からの強迫的な目逸らし" },
-        "調和": { front: "均衡と摩擦回避", back: "自己主張放棄による生存戦略" },
-        "孤独": { back: "社会的繋がりを絶たれることへの根源的恐怖" },
-        "停滞": { back: "変化に伴う痛みを極端に恐れる精神的硬直" },
-        "虚無": { back: "すべてが徒労に終わることへの諦めと防衛" },
-        "裏切り": { back: "先に自分が裏切ることで傷を最小限にする計算" },
-        "束縛": { back: "誰かに縛られていたいという歪んだ被保護欲求" },
-        "喪失": { back: "失う前に自ら壊してしまいたい自暴自棄な執着" },
-        "凡庸": { back: "その他大勢に埋没することへの耐え難い嫌悪" },
-        "依存": { back: "自分一人では存在を維持できない精神的寄生" },
-        "崩壊": { back: "すべてをゼロに戻し責任から逃れたい衝動" },
-        "嫉妬": { back: "手に入らないものを呪うことで自分を守る防衛" },
-        "忘却": { back: "直視できない過去からの永久的な逃亡願望" },
-        "静止": { back: "未来への期待の完全な消失" },
-        "覚醒": { back: "現在の自分を偽物と定義する強い自己否定" },
-        "決別": { back: "憎しみすら残さないほどの冷徹な関係断絶" },
-        "原点": { back: "成長の限界を感じて過去の栄光に縋る退行" },
-        "超越": { back: "人間らしい泥臭い感情を捨て去りたい脱人間化" },
-        "開錠": { back: "暴いてはいけない内面への禁断の好奇心" },
-        "再生": { back: "死への恐怖の裏返しとしての病的生への執着" },
-        "混沌": { back: "秩序による統制への限界と原始的衝動の爆発" },
-        "境界": { back: "誰にも踏み込まれたくない絶対的な心の聖域" },
-        "導き": { back: "自分の人生の舵取りを任せたいという服従心" },
-        "共鳴": { back: "独りではないと思い込みたい究極の同調圧力" },
-        "深淵": { back: "自己の深層にある狂気に対する恐れと誘惑" },
-        "使命": { back: "自分の存在意義を義務にすり替える自己犠牲" }
+        "富": { front: "物質的安定", back: "愛されない恐怖の代償" },
+        "愛": { front: "精神的結合", back: "自己欠損を埋める飢餓" },
+        "成功": { front: "自己実現", back: "敗北による存在消滅の恐怖" },
+        "変革": { front: "現状打破", back: "過去の自分への強い嫌悪" },
+        "支配": { front: "環境掌握", back: "無力感への反動的衝動" },
+        "孤独": { back: "社会から断絶される根源的恐怖" },
+        "崩壊": { back: "すべてを無に帰したい破壊願望" },
+        "依存": { back: "一人では存在を維持できない寄生" },
+        "再生": { back: "死への恐怖が反転した生への執着" },
+        "混沌": { back: "秩序への限界と原始的衝動の爆発" },
+        "深淵": { back: "内なる狂気に対する恐れと誘惑" }
     };
+    const wordSets = [["自由","富","愛","成功","変革","支配"],["孤独","崩壊","依存","再生","混沌","深淵"]];
 
-    const wordSets = [
-        ["自由","富","愛","成功","変革","承認","安息","支配","情熱","知識","美","調和"],
-        ["孤独","停滞","虚無","裏切り","束縛","喪失","凡庸","依存","崩壊","嫉妬","忘却","静止"],
-        ["覚醒","決別","原点","超越","開錠","再生","混沌","境界","導き","共鳴","深淵","使命"]
-    ];
-
-    let wordScores = {}; 
-    const videoElement = document.querySelector('.input_video');
-    const canvasElement = document.querySelector('.output_canvas');
-    const canvasCtx = canvasElement.getContext('2d');
-    const cameraContainer = document.getElementById('camera-container');
-    const fakeLogs = document.getElementById('fake-logs');
-    
-    let sysState = 'boot'; // boot, scanning, diving, sampling, result
-    let currentRound = 0;
-    let activeWords = [];
-    let cursorX = 0, cursorY = 0;
-    let baseNoseX = null, baseNoseY = null;
-    let irisColor = "翡翠 (Jade)";
-    let eyeCenterTarget = { x: 50, y: 50 };
-
+    let wordScores = {};
+    const video = document.querySelector('.input_video');
+    const canvas = document.querySelector('.output_canvas');
+    const ctx = canvas.getContext('2d');
     const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
-    faceMesh.setOptions({maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5});
+    
+    let state = 'boot';
+    let currentRound = 0;
+    let progress = 0;
+    let eyeTarget = {x:50, y:50, r:20};
+
+    faceMesh.setOptions({maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5});
     faceMesh.onResults(onResults);
 
     function startSystem() {
         document.getElementById('screen-boot').classList.add('hidden');
-        new Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 640, height: 480, facingMode: "user" }).start().then(() => {
-            startScanPhase();
+        new Camera(video, { onFrame: async () => { await faceMesh.send({image: video}); }, width: 640, height: 480 }).start().then(() => {
+            state = 'scanning';
+            document.getElementById('hud-overlay').classList.remove('hidden');
         });
     }
 
-    // --- Phase 1: Cyberpunk Scan ---
-    function startScanPhase() {
-        sysState = 'scanning';
-        document.getElementById('screen-boot').style.display = 'none'; // 完全に消す
-        document.getElementById('scan-overlay').classList.remove('hidden');
-        
-        let logCount = 0;
-        const logInterval = setInterval(() => {
-            const msgs = ["BIOMETRIC SYNC...", "EXTRACTING IRIS PATTERN...", "MAPPING NEURAL PATHWAYS...", "ACCESSING FRONTAL LOBE...", "BYPASSING CONSCIOUSNESS..."];
-            fakeLogs.innerHTML += msgs[logCount % msgs.length] + "<br>";
-            logCount++;
-        }, 500);
+    function onResults(res) {
+        if (state === 'result') return;
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
 
-        // 6秒間スキャン演出を見せる
-        setTimeout(() => {
-            clearInterval(logInterval);
-            startDivePhase();
-        }, 6000);
+        if (res.multiFaceLandmarks && res.multiFaceLandmarks[0]) {
+            const lms = res.multiFaceLandmarks[0];
+            const lc = lms[468]; 
+            eyeTarget = { x: lc.x * canvas.width, y: lc.y * canvas.height, r: Math.abs(lms[469].x - lms[471].x) * canvas.width * 2 };
+
+            if (state === 'scanning') {
+                drawIrisHUD(eyeTarget.x, eyeTarget.y, eyeTarget.r);
+                progress += 0.4;
+                document.getElementById('scan-progress-fill').style.width = `${progress}%`;
+                if (progress >= 100) startDive();
+            }
+
+            if (state === 'sampling') {
+                // 視線トラッキング
+                const nose = lms[1];
+                const cx = window.innerWidth/2 + (nose.x - 0.5) * window.innerWidth * -5;
+                const cy = window.innerHeight/2 + (nose.y - 0.5) * window.innerHeight * 5;
+                checkWords(cx, cy);
+            }
+        }
     }
 
-    // --- Phase 2: Dive Transition ---
-    function startDivePhase() {
-        sysState = 'diving';
-        document.getElementById('scan-overlay').classList.add('hidden');
+    function drawIrisHUD(cx, cy, r) {
+        const t = Date.now() * 0.002;
+        ctx.save();
+        ctx.translate(cx, cy);
         
-        // 取得した瞳の座標へ一気にズームイン
-        cameraContainer.style.transformOrigin = `${eyeCenterTarget.x}% ${eyeCenterTarget.y}%`;
-        cameraContainer.style.transform = 'scale(30)';
+        // メインリング
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0,0, r * 1.5, 0, Math.PI*2); ctx.stroke();
+
+        // 未来ノート風：回転する目盛り
+        ctx.rotate(t);
+        for(let i=0; i<8; i++) {
+            ctx.rotate(Math.PI/4);
+            ctx.beginPath(); ctx.moveTo(r*1.8, 0); ctx.lineTo(r*2.1, 0);
+            ctx.strokeStyle = i%2===0 ? varColor('--accent') : 'rgba(0,255,136,0.2)';
+            ctx.stroke();
+        }
+        
+        // ターゲット
+        ctx.restore();
+        ctx.strokeStyle = varColor('--accent');
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx,cy, 5, 0, Math.PI*2); ctx.stroke();
+    }
+
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+    function startDive() {
+        state = 'dive';
+        document.getElementById('hud-overlay').classList.add('hidden');
+        const container = document.getElementById('camera-container');
+        container.style.transformOrigin = `${(eyeTarget.x/canvas.width)*100}% ${(eyeTarget.y/canvas.height)*100}%`;
+        container.style.transform = 'scale(50)';
         
         setTimeout(() => {
-            const flash = document.getElementById('flash');
-            flash.style.opacity = '1'; // ホワイトアウト
+            document.getElementById('flash').style.opacity = 1;
             setTimeout(() => {
-                cameraContainer.style.display = 'none'; // カメラ映像を完全消去
+                container.style.display = 'none';
                 document.getElementById('word-container').classList.remove('hidden');
-                flash.style.opacity = '0';
-                startSamplingPhase();
-            }, 500);
-        }, 1500);
+                document.getElementById('flash').style.opacity = 0;
+                state = 'sampling';
+                startSampling();
+            }, 600);
+        }, 1000);
     }
 
-    function onResults(results) {
-        if (sysState === 'result' || sysState === 'boot') return;
-        
-        canvasElement.width = window.innerWidth;
-        canvasElement.height = window.innerHeight;
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-            const landmarks = results.multiFaceLandmarks[0];
-            
-            if (sysState === 'scanning' || sysState === 'diving') {
-                drawCyberpunkMesh(landmarks);
-                // 瞳の座標を更新 (468: 右目)
-                eyeCenterTarget.x = landmarks[468].x * 100;
-                eyeCenterTarget.y = landmarks[468].y * 100;
-            }
-
-            if (sysState === 'sampling') {
-                const nose = landmarks[1];
-                if(!baseNoseX) { baseNoseX = nose.x; baseNoseY = nose.y; }
-                const sensitivity = 6.0; 
-                cursorX = window.innerWidth / 2 + ((nose.x - baseNoseX) * window.innerWidth * sensitivity * -1);
-                cursorY = window.innerHeight / 2 + ((nose.y - baseNoseY) * window.innerHeight * sensitivity);
-                checkWordIntersection();
-            }
-        }
+    function startSampling() {
+        if (currentRound >= 2) { finish(); return; }
+        renderWords(wordSets[currentRound]);
+        setTimeout(() => { currentRound++; startSampling(); }, 6000);
     }
 
-    function drawCyberpunkMesh(landmarks) {
-        // サイバーパンクなノードとラインの描画
-        canvasCtx.lineWidth = 1;
-        canvasCtx.shadowBlur = 10;
-        
-        // 目立つポイント（輪郭、眉、鼻、口の一部）を繋ぐ
-        const keyPoints = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
-        
-        canvasCtx.strokeStyle = 'rgba(0, 229, 255, 0.4)'; // ネオンブルー
-        canvasCtx.shadowColor = 'rgba(0, 229, 255, 0.8)';
-        canvasCtx.beginPath();
-        for(let i=0; i<keyPoints.length; i++){
-            const p = landmarks[keyPoints[i]];
-            const x = p.x * canvasElement.width;
-            const y = p.y * canvasElement.height;
-            if(i===0) canvasCtx.moveTo(x,y);
-            else canvasCtx.lineTo(x,y);
-        }
-        canvasCtx.closePath();
-        canvasCtx.stroke();
-
-        // ノード(点)を光らせる
-        canvasCtx.fillStyle = '#ff007f'; // ネオンピンク
-        canvasCtx.shadowColor = '#ff007f';
-        keyPoints.forEach(idx => {
-            if(Math.random() > 0.8) return; // チカチカさせる
-            const p = landmarks[idx];
-            canvasCtx.beginPath();
-            canvasCtx.arc(p.x * canvasElement.width, p.y * canvasElement.height, 2, 0, Math.PI*2);
-            canvasCtx.fill();
-        });
-
-        // 瞳のロックオン
-        drawEyeLock(landmarks, 468);
-        drawEyeLock(landmarks, 473);
-    }
-
-    function drawEyeLock(landmarks, idx) {
-        const cx = landmarks[idx].x * canvasElement.width;
-        const cy = landmarks[idx].y * canvasElement.height;
-        canvasCtx.strokeStyle = '#00ff88';
-        canvasCtx.shadowColor = '#00ff88';
-        canvasCtx.beginPath();
-        canvasCtx.arc(cx, cy, 20, 0, Math.PI * 2);
-        canvasCtx.stroke();
-    }
-
-    // --- Phase 3: Word Sampling ---
-    function startSamplingPhase() {
-        sysState = 'sampling';
-        if(currentRound >= 3) { finishAnalysis(); return; }
-        displayWordsGrid(wordSets[currentRound]);
-        setTimeout(() => {
-            currentRound++;
-            startSamplingPhase();
-        }, 7000); 
-    }
-
-    function displayWordsGrid(words) {
-        const container = document.getElementById('word-container');
-        container.innerHTML = '';
-        activeWords = [];
-        const shuffled = words.sort(() => 0.5 - Math.random());
-        shuffled.forEach(wordText => {
-            const cell = document.createElement('div');
-            cell.className = 'word-cell';
-            const el = document.createElement('div');
-            el.className = 'word';
-            el.innerText = wordText;
-            cell.appendChild(el);
-            container.appendChild(cell);
-            if(!wordScores[wordText]) wordScores[wordScores[wordText]=0];
-            activeWords.push({ element: el, text: wordText, rect: null });
-        });
-        setTimeout(() => { activeWords.forEach(w => w.rect = w.element.getBoundingClientRect()); }, 100);
-    }
-
-    function checkWordIntersection() {
-        activeWords.forEach(w => {
-            if(!w.rect) return;
-            const cx = w.rect.left + w.rect.width / 2;
-            const cy = w.rect.top + w.rect.height / 2;
-            const dist = Math.hypot(cursorX - cx, cursorY - cy);
-            if(dist < 120) wordScores[w.text] = (wordScores[w.text] || 0) + 1;
+    function renderWords(set) {
+        const c = document.getElementById('word-container');
+        c.innerHTML = '';
+        set.forEach(w => {
+            const cell = document.createElement('div'); cell.className='word-cell';
+            const el = document.createElement('div'); el.className='word'; el.innerText=w;
+            cell.appendChild(el); c.appendChild(cell);
+            wordScores[w] = 0;
         });
     }
 
-    // --- Phase 4: Results ---
-    function finishAnalysis() {
-        sysState = 'result';
-        document.getElementById('word-container').style.display = 'none';
+    function checkWords(cx, cy) {
+        document.querySelectorAll('.word').forEach(el => {
+            const r = el.getBoundingClientRect();
+            const dist = Math.hypot(cx - (r.left+r.width/2), cy - (r.top+r.height/2));
+            if (dist < 100) wordScores[el.innerText]++;
+        });
+    }
 
-        const sorted = Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
-        const high3 = sorted.slice(0, 3);
-        const low3 = sorted.length > 6 ? sorted.slice(-3) : [];
-
-        renderList('res-high-list', high3, true);
-        renderList('res-low-list', low3, false);
-
-        const irises = ["漆黒 (Obsidian)", "琥珀 (Amber)", "鋼鉄 (Steel)", "翡翠 (Jade)"];
-        document.getElementById('res-iris').innerText = irises[Math.floor(Math.random()*irises.length)];
-        document.getElementById('res-type').innerText = `Type: ${["21-Omega", "07-Sigma", "14-Delta", "01-Alpha"][Math.floor(Math.random()*4)]}`;
-        document.getElementById('res-percent').innerText = (88 + Math.random() * 10).toFixed(1);
+    function finish() {
+        state = 'result';
+        document.getElementById('word-container').classList.add('hidden');
+        const sorted = Object.entries(wordScores).sort((a,b)=>b[1]-a[1]);
         
+        document.getElementById('res-iris').innerText = "深碧 (Deep Emerald)";
+        document.getElementById('res-asym').innerText = "0.8% (高対称)";
+        document.getElementById('res-type').innerText = "Type: 21-Omega";
+        
+        const list = document.getElementById('res-list');
+        sorted.slice(0,3).forEach(([w, s]) => {
+            const d = wordData[w];
+            list.innerHTML += `<div class="factor-word">${w}</div><div class="factor-desc"><b>[意識]</b> ${d.front || '潜在的反応'}<br><b>[深層]</b> ${d.back}</div>`;
+        });
         document.getElementById('screen-result').classList.remove('hidden');
-    }
-
-    function renderList(id, items, showFront) {
-        const list = document.getElementById(id);
-        list.innerHTML = '';
-        items.forEach(([word, score]) => {
-            const data = wordData[word] || {front: "不明", back: "解析不能"};
-            const div = document.createElement('div');
-            div.className = 'factor-item';
-            div.innerHTML = `
-                <div class="factor-word" style="border-color: ${showFront ? 'var(--accent)' : 'var(--neon-pink)'}">${word}</div>
-                <div class="factor-desc">
-                    ${showFront && data.front ? `<b>[意識]</b> ${data.front}<br>` : ''}
-                    <b class="deep">[深層]</b> ${data.back}
-                </div>
-            `;
-            list.appendChild(div);
-        });
     }
 </script>
 </body>
