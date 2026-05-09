@@ -3,52 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Potential Data Scanner v2</title>
+    <title>Potential Data Scanner V3</title>
+    <!-- MediaPipe Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --bg-color: #050505;
-            --text-main: #e0e0e0;
+            --bg-color: #030303;
+            --text-main: #ffffff;
             --accent: #00ff88;
+            --alert: #ff003c;
+            --font-sys: 'Courier New', Courier, monospace;
+            --font-word: 'Helvetica Neue', Arial, sans-serif;
         }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--bg-color); color: var(--text-main);
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            overflow: hidden; user-select: none;
+            background-color: var(--bg-color); color: var(--accent);
+            font-family: var(--font-sys); overflow: hidden; user-select: none;
         }
         #container { position: relative; width: 100%; height: 100%; }
         
+        /* Video & Canvas */
         .input_video { display: none; }
-        .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.2; object-fit: cover; z-index: 1; pointer-events: none; }
+        .output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8; z-index: 1; pointer-events: none; }
         
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,5,0.9); transition: opacity 0.8s; }
+        /* Screens */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(3,3,3,0.9); transition: opacity 0.8s; }
         .hidden { opacity: 0; pointer-events: none; }
         
-        h1 { font-size: 1.1rem; font-weight: 200; letter-spacing: 4px; color: var(--accent); margin-bottom: 30px; text-transform: uppercase; }
+        /* Typography */
+        h1 { font-size: 1.5rem; font-weight: normal; letter-spacing: 5px; margin-bottom: 20px; text-transform: uppercase; text-shadow: 0 0 10px var(--accent); }
         p { font-size: 0.9rem; line-height: 1.8; text-align: center; max-width: 80%; color: #aaa; }
         
-        /* 文字の巨大化と静寂 */
-        #word-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+        /* Cyberpunk Button */
+        .btn { margin-top: 40px; padding: 15px 40px; border: 1px solid var(--accent); background: rgba(0,255,136,0.1); color: var(--accent); font-family: inherit; font-size: 0.9rem; cursor: pointer; text-transform: uppercase; letter-spacing: 3px; transition: 0.3s; box-shadow: 0 0 10px rgba(0,255,136,0.2); }
+        .btn:hover { background: var(--accent); color: var(--bg-color); box-shadow: 0 0 20px var(--accent); }
+
+        /* Scanning UI Elements */
+        #scan-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); animation: scan 3s linear infinite; }
+        @keyframes scan { 0% { top: 0; opacity: 1; } 50% { opacity: 0.5; } 100% { top: 100%; opacity: 1; } }
+        
+        /* Word Grid (No Overlap) */
+        #word-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+        .word-cell { display: flex; align-items: center; justify-content: center; position: relative; }
         .word { 
             position: absolute; 
-            font-size: 1.8rem; /* 大きく */
-            color: #444; /* 最初から一定の暗さ */
-            transform: translate(-50%, -50%); 
-            transition: opacity 0.5s;
-            letter-spacing: 2px;
+            font-size: 2.2rem; /* 巨大化 */
+            color: var(--text-main); /* 純白 */
+            font-family: var(--font-word);
+            font-weight: 300;
+            letter-spacing: 4px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
         }
+        @keyframes fadeIn { to { opacity: 1; } }
 
-        .btn { margin-top: 40px; padding: 12px 40px; border: 1px solid #444; background: transparent; color: #888; font-family: inherit; font-size: 0.8rem; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
-        .btn:hover { border-color: var(--accent); color: var(--accent); }
-        
-        /* 結果画面の構成 */
-        .result-box { width: 85%; max-width: 400px; text-align: left; border-top: 1px solid #333; padding-top: 20px; }
-        .protocol-label { font-size: 0.7rem; color: var(--accent); opacity: 0.7; margin-bottom: 5px; }
-        .protocol-name { font-size: 1.4rem; margin-bottom: 20px; font-weight: 300; }
-        .analysis-text { font-size: 0.85rem; line-height: 1.8; color: #bbb; margin-bottom: 20px; text-align: justify; }
-        .stats { font-size: 0.7rem; color: #666; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        /* Glitch Effect */
+        .glitch-flash { position: absolute; top:0; left:0; width:100%; height:100%; background: #fff; z-index: 50; opacity: 0; pointer-events: none; }
+
+        /* Clinical Result Screen */
+        .result-box { width: 90%; max-width: 500px; text-align: left; border-left: 2px solid var(--accent); padding: 0 0 0 20px; margin-top: 20px; background: rgba(0,0,0,0.5); }
+        .section-title { font-size: 0.7rem; color: #666; margin-top: 20px; margin-bottom: 5px; letter-spacing: 2px; }
+        .insight-word { font-size: 1.2rem; color: var(--text-main); font-weight: bold; margin-bottom: 5px; display: inline-block; border-bottom: 1px solid #333;}
+        .insight-text { font-size: 0.85rem; line-height: 1.6; color: #bbb; margin-bottom: 15px; }
+        .type-decl { font-size: 1.5rem; color: var(--accent); margin: 30px 0 10px 0; text-shadow: 0 0 10px rgba(0,255,136,0.3); }
     </style>
 </head>
 <body>
@@ -57,53 +76,102 @@
     <video class="input_video" playsinline></video>
     <canvas class="output_canvas"></canvas>
     
+    <div id="scan-ui" class="hidden">
+        <div class="scan-line"></div>
+        <div style="position:absolute; bottom:10px; left:10px; font-size:0.7rem; opacity:0.7;">
+            BIOMETRIC SYNC: <span id="sync-rate">0</span>%<br>
+            STATUS: EXTRACTING SUBCONSCIOUS
+        </div>
+    </div>
+    
     <div id="word-container"></div>
+    <div id="glitch" class="glitch-flash"></div>
 
     <!-- Phase 1: Boot -->
     <div id="screen-boot" class="screen">
-        <h1>Analysis Protocol</h1>
-        <p>視線ベクトルのサンプリングにより、<br>現在の精神構造を客観的に記述します。</p>
-        <button class="btn" onclick="startSystem()">計測開始</button>
+        <h1>NEURAL UPLINK</h1>
+        <p>虹彩の微細振動から、あなたの「表の顔」と「裏の真実」を抽出します。<br><br><span style="color:#666; font-size:0.8rem;">※システム作動中、画面に現れる概念を見つめてください。</span></p>
+        <button class="btn" onclick="startSystem()">LINK START</button>
     </div>
 
     <!-- Phase 3: Results -->
-    <div id="screen-result" class="screen hidden">
-        <h1>Result Data</h1>
+    <div id="screen-result" class="screen hidden" style="justify-content: flex-start; padding-top: 50px;">
+        <h1 style="font-size: 1.2rem; color:#fff; text-shadow:none; letter-spacing:2px;">DECODED PROTOCOL</h1>
+        
         <div class="result-box">
-            <div class="protocol-label">IDENTIFIED PROTOCOL</div>
-            <div class="protocol-name" id="res-type">Type: 14-Delta</div>
-            
-            <div class="protocol-label">DESCRIPTION</div>
-            <div class="analysis-text" id="res-desc">
-                <!-- ここに説明文が入る -->
+            <div class="section-title">PRIMARY FACTOR [検出された渇望]</div>
+            <div id="res-high-word" class="insight-word">---</div>
+            <div class="insight-text">
+                <span style="color:var(--accent);">[意識]</span> <span id="res-high-front">---</span><br>
+                <span style="color:var(--alert);">[深層]</span> <span id="res-high-back">---</span>
             </div>
 
-            <div class="stats"><span>Compatibility</span><span id="res-percent">0.0%</span></div>
-            <div class="stats"><span>Dominant Factor</span><span id="res-high" style="color:#888">---</span></div>
-            <div class="stats"><span>Suppressed Factor</span><span id="res-low" style="color:#888">---</span></div>
+            <div class="section-title">SUPPRESSED FACTOR [忘れている瞳]</div>
+            <div id="res-low-word" class="insight-word" style="color:#888;">---</div>
+            <div class="insight-text">
+                <span style="color:#666;">[回避]</span> <span id="res-low-back">---</span>
+            </div>
+
+            <div class="section-title">ASSIGNED ARCHETYPE</div>
+            <div id="res-type" class="type-decl">Type: 00-Null</div>
+            <div style="font-size: 0.7rem; color: #888;">COMPATIBILITY: <span id="res-percent">0.0</span>%</div>
         </div>
-        <button class="btn" onclick="window.location.href='#'">詳細な総括を確認する</button>
+        
+        <button class="btn" onclick="window.location.href='#'" style="margin-top: 30px; font-size:0.8rem; padding: 12px 30px;">導き書へアクセス</button>
     </div>
 </div>
 
 <script>
-    const wordSets = [
-        ["自由", "富", "愛", "成功", "変革", "承認", "安息", "支配", "情熱", "知識", "美", "調和"],
-        ["孤独", "停滞", "虚無", "裏切り", "束縛", "喪失", "凡庸", "依存", "崩壊", "嫉妬", "忘却", "静止"],
-        ["覚醒", "決別", "原点", "超越", "開錠", "再生", "混沌", "境界", "導き", "共鳴", "深淵", "使命"]
-    ];
-
-    // 21の属性に合わせた説明文の辞書 (一部抜粋・プロトタイプ用)
-    const descriptions = {
-        "Type: 01-Alpha": "この状態は、外部からの干渉を排し、純粋な理論的整合性を求める傾向にある。他者からの承認よりも自己完結した真理に重きを置く、静かなる観測者のフェーズである。",
-        "Type: 07-Sigma": "現状の枠組みに対する強い不全感と、それを打破しようとする破壊的衝動が混在している。リスクを厭わず、未知の領域に自己を投じる準備が整った変革の兆しを示している。",
-        "Type: 14-Delta": "他者との共鳴や調和を深く渇望する一方で、根源的な孤独に対する鋭い回避反応が検出された。自己を他者の輪郭に溶け込ませることで安寧を得ようとする防衛的渇望の状態にある。",
-        "Type: 21-Omega": "混沌の中に秩序を見出し、複雑な状況を統制しようとする意志が潜在している。一見すると停滞しているように見えるが、内側では巨大な力の再構築が行われている支配的潜伏期である。"
+    // --- 1. 36概念と心理解読辞書 ---
+    const wordData = {
+        "自由": { front: "束縛からの解放と自己決定", back: "責任の放棄と、どこにも属せない孤独への予感。" },
+        "富": { front: "物質的安定と社会的強者の証", back: "他者への不信感と、金銭以外で愛されない恐怖。" },
+        "愛": { front: "献身と他者との精神的結合", back: "自己欠損の穴埋めと、承認を貪る飢餓状態。" },
+        "成功": { front: "自己実現と他者からの羨望", back: "敗北による存在価値の消失に対する病的脅迫観念。" },
+        "変革": { front: "現状打破と新天地への期待", back: "過去の自己に対する強い嫌悪と、逃避願望。" },
+        "承認": { front: "存在の肯定と集団への所属", back: "自尊心の著しい欠如と、他者の評価への隷属。" },
+        "安息": { front: "平穏な日常と精神の安定", back: "競争社会への適応限界と、社会的な死への誘惑。" },
+        "支配": { front: "統制力の行使と環境の掌握", back: "コントロール不能な自分自身に対する無力感の反動。" },
+        "情熱": { front: "目的への没頭と生命力の燃焼", back: "冷え切った日常を紛らわせるための一過性の発狂。" },
+        "知識": { front: "知的好奇心と論理的武装", back: "無知を曝け出すことへの恐怖と、優越感の源泉。" },
+        "美": { front: "審美眼の追求と理想の具現", back: "醜い現実からの目逸らしと、自己愛の極致。" },
+        "調和": { front: "集団の均衡と摩擦の回避", back: "自己主張の放棄による、波風を立てない生存戦略。" },
+        "孤独": { front: "独りの時間による自己回復", back: "社会的繋がりを絶たれることへの根源的恐怖。" },
+        "停滞": { front: "休息と現状維持の選択", back: "変化に伴う痛みを極端に恐れる精神的硬直。" },
+        "虚無": { front: "意味の喪失による達観", back: "すべてが徒労に終わることへの諦めと防衛。" },
+        "裏切り": { front: "他者への不信と警戒心の維持", back: "最初に自分が裏切ることで傷を最小限にする計算。" },
+        "束縛": { front: "自由の制限に対する反発", back: "誰かに縛られていたいという歪んだ被保護欲求。" },
+        "喪失": { front: "大切なものを失う悲しみ", back: "失う前に壊してしまいたい自暴自棄な執着。" },
+        "凡庸": { front: "平穏な一般市民としての自覚", back: "その他大勢に埋没することへの耐え難い自己嫌悪。" },
+        "依存": { front: "他者との深い繋がりへの欲求", back: "自分一人では存在を維持できない精神的寄生。" },
+        "崩壊": { front: "秩序の瓦解に対する不安", back: "すべてをゼロに戻し責任から逃れたい破壊衝動。" },
+        "嫉妬": { front: "他者への対抗心と羨望", back: "手に入らないものを呪うことで自分を守る防衛反応。" },
+        "忘却": { front: "辛い記憶の消去と浄化", back: "直視できない過去からの永久的な逃亡。" },
+        "静止": { front: "時間の停止と永遠への憧憬", back: "未来への期待の完全な消失。" },
+        "覚醒": { front: "新たな自分へのアップデート", back: "現在の自分を「偽物」と定義する自己否定。" },
+        "決別": { front: "過去や他者との健全な境界", back: "憎しみすら残さないほどの冷徹な関係断絶。" },
+        "原点": { front: "初心への回帰と自己の再発見", back: "成長の行き止まりを感じ過去の栄光に縋る退行。" },
+        "超越": { front: "限界の突破と高次への到達", back: "人間らしい泥臭い感情を捨て去りたい脱人間化。" },
+        "開錠": { front: "可能性の解放と真実の探究", back: "暴いてはいけない内面への禁断の好奇心。" },
+        "再生": { front: "失敗からの立ち直りと復活", back: "死への恐怖の裏返しとしての生への執着。" },
+        "混沌": { front: "既存価値の破壊と自由な発想", back: "秩序による統制への限界と原始的衝動の爆発。" },
+        "境界": { front: "自己と他者の適切な距離", back: "誰にも踏み込まれたくない絶対的な心の聖域。" },
+        "導き": { front: "正しい方向への示唆の希求", back: "自分の人生の舵取りを誰かに任せたい服従心。" },
+        "共鳴": { front: "他者との深いシンクロニシティ", back: "「独りではない」と思い込みたい究極の同調。" },
+        "深淵": { front: "自分の内奥にある真実の探究", back: "自己の深層にある狂気に対する恐れと誘惑。" },
+        "使命": { front: "生きる目的と社会的な責任", back: "自分の存在意義を義務にすり替える自己犠牲。" }
     };
+
+    const wordSets = [
+        ["自由","富","愛","成功","変革","承認","安息","支配","情熱","知識","美","調和"],
+        ["孤独","停滞","虚無","裏切り","束縛","喪失","凡庸","依存","崩壊","嫉妬","忘却","静止"],
+        ["覚醒","決別","原点","超越","開錠","再生","混沌","境界","導き","共鳴","深淵","使命"]
+    ];
 
     let wordScores = {}; 
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
     const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
     
     let isScanning = false;
@@ -111,61 +179,118 @@
     let activeWords = [];
     let cursorX = 0, cursorY = 0;
     let baseNoseX = null, baseNoseY = null;
+    let syncRate = 0;
 
-    faceMesh.setOptions({refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5});
+    faceMesh.setOptions({maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5});
     faceMesh.onResults(onResults);
 
     function startSystem() {
         document.getElementById('screen-boot').classList.add('hidden');
         new Camera(videoElement, {
             onFrame: async () => { await faceMesh.send({image: videoElement}); },
-            width: 640, height: 480
+            width: 640, height: 480, facingMode: "user"
         }).start().then(() => {
-            setTimeout(startSampling, 2000);
+            document.getElementById('scan-ui').classList.remove('hidden');
+            // シンクロ率アニメーション
+            setInterval(() => { if(syncRate < 100) document.getElementById('sync-rate').innerText = ++syncRate; }, 30);
+            setTimeout(startSampling, 3000);
         });
     }
 
     function onResults(results) {
-        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
-        const landmarks = results.multiFaceLandmarks[0];
-        
-        // 視線計算（ポインターは表示しないが計算は継続）
-        const nose = landmarks[1];
-        if(!baseNoseX) { baseNoseX = nose.x; baseNoseY = nose.y; }
-        const sensitivity = 3.5;
-        cursorX = window.innerWidth / 2 + ((nose.x - baseNoseX) * window.innerWidth * sensitivity * -1);
-        cursorY = window.innerHeight / 2 + ((nose.y - baseNoseY) * window.innerHeight * sensitivity);
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-        if (isScanning) checkWordIntersection();
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const landmarks = results.multiFaceLandmarks[0];
+            
+            // サイバーパンク演出：フェイスメッシュ描画
+            canvasCtx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
+            canvasCtx.lineWidth = 0.5;
+            for (let i = 0; i < landmarks.length; i+=5) {
+                canvasCtx.beginPath();
+                canvasCtx.arc(landmarks[i].x * canvasElement.width, landmarks[i].y * canvasElement.height, 1, 0, 2 * Math.PI);
+                canvasCtx.stroke();
+            }
+
+            // アイリスロックオン演出
+            drawLockOn(landmarks, 468); // 右目
+            drawLockOn(landmarks, 473); // 左目
+
+            // 視線計算（ポインターは非表示）
+            const nose = landmarks[1];
+            if(!baseNoseX) { baseNoseX = nose.x; baseNoseY = nose.y; }
+            const sensitivity = 4.0;
+            cursorX = window.innerWidth / 2 + ((nose.x - baseNoseX) * window.innerWidth * sensitivity * -1);
+            cursorY = window.innerHeight / 2 + ((nose.y - baseNoseY) * window.innerHeight * sensitivity);
+
+            if (isScanning) checkWordIntersection();
+        }
+        canvasCtx.restore();
+    }
+
+    function drawLockOn(landmarks, centerIdx) {
+        const cx = landmarks[centerIdx].x * canvasElement.width;
+        const cy = landmarks[centerIdx].y * canvasElement.height;
+        const time = Date.now() / 200;
+        
+        canvasCtx.strokeStyle = '#00ff88';
+        canvasCtx.lineWidth = 1;
+        canvasCtx.beginPath();
+        canvasCtx.arc(cx, cy, 15, time, time + Math.PI);
+        canvasCtx.stroke();
+        canvasCtx.beginPath();
+        canvasCtx.arc(cx, cy, 25, -time, -time + Math.PI/2);
+        canvasCtx.stroke();
     }
 
     function startSampling() {
         if(currentRound >= 3) { finishAnalysis(); return; }
-        displayWords(wordSets[currentRound]);
+        displayWordsGrid(wordSets[currentRound]);
         isScanning = true;
         setTimeout(() => {
             isScanning = false;
             currentRound++;
+            
+            // グリッチエフェクト
+            const glitch = document.getElementById('glitch');
+            glitch.style.opacity = '1';
+            setTimeout(() => { glitch.style.opacity = '0'; }, 100);
+            
             startSampling();
-        }, 8000); // 1画面8秒に短縮してテンポアップ
+        }, 8000); // 8秒/ラウンド
     }
 
-    function displayWords(words) {
+    function displayWordsGrid(words) {
         const container = document.getElementById('word-container');
         container.innerHTML = '';
         activeWords = [];
-        words.forEach(wordText => {
-            const x = 20 + Math.random() * 60;
-            const y = 20 + Math.random() * 60;
+        
+        // シャッフル
+        const shuffled = words.sort(() => 0.5 - Math.random());
+
+        shuffled.forEach((wordText, index) => {
+            const cell = document.createElement('div');
+            cell.className = 'word-cell';
+            
             const el = document.createElement('div');
             el.className = 'word';
             el.innerText = wordText;
-            el.style.left = `${x}%`;
-            el.style.top = `${y}%`;
-            container.appendChild(el);
+            
+            // セル内で少しだけランダムにズラす（重ならない程度）
+            const offsetX = (Math.random() - 0.5) * 20;
+            const offsetY = (Math.random() - 0.5) * 20;
+            el.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            
+            cell.appendChild(el);
+            container.appendChild(cell);
+            
             if(!wordScores[wordText]) wordScores[wordText] = 0;
-            activeWords.push({ element: el, text: wordText, rect: el.getBoundingClientRect() });
+            activeWords.push({ element: el, text: wordText, rect: null });
         });
+
         setTimeout(() => {
             activeWords.forEach(w => w.rect = w.element.getBoundingClientRect());
         }, 100);
@@ -177,24 +302,36 @@
             const cx = w.rect.left + w.rect.width / 2;
             const cy = w.rect.top + w.rect.height / 2;
             const dist = Math.hypot(cursorX - cx, cursorY - cy);
-            if(dist < 80) wordScores[w.text] += 1; // 判定範囲を少し広げて確実に拾う
+            if(dist < 100) wordScores[w.text] += 1; // ヒットボックス
         });
     }
 
     function finishAnalysis() {
         document.getElementById('word-container').innerHTML = '';
-        const sorted = Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
-        const highest = sorted.slice(0, 2).map(w => w[0]).join(" / ");
-        const lowest = sorted.slice(-2).map(w => w[0]).join(" / ");
+        document.getElementById('scan-ui').classList.add('hidden');
+        canvasElement.style.opacity = "0.2"; // バックグラウンドを暗く
 
-        const types = Object.keys(descriptions);
+        // スコア解析
+        const sorted = Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
+        const topWord = sorted[0][0];
+        const bottomWord = sorted[sorted.length - 1][0]; // 避けたワード
+
+        const topData = wordData[topWord] || {front:"解析不能", back:"解析不能"};
+        const bottomData = wordData[bottomWord] || {back:"解析不能"};
+
+        const types = ["01-Alpha", "07-Sigma", "14-Delta", "21-Omega"];
         const randomType = types[Math.floor(Math.random() * types.length)];
         
-        document.getElementById('res-type').innerText = randomType;
-        document.getElementById('res-desc').innerText = descriptions[randomType];
-        document.getElementById('res-percent').innerText = (85 + Math.random() * 10).toFixed(1) + "%";
-        document.getElementById('res-high').innerText = highest || "計測不能";
-        document.getElementById('res-low').innerText = lowest || "計測不能";
+        // 結果の流し込み
+        document.getElementById('res-high-word').innerText = topWord;
+        document.getElementById('res-high-front').innerText = topData.front;
+        document.getElementById('res-high-back').innerText = topData.back;
+        
+        document.getElementById('res-low-word').innerText = bottomWord;
+        document.getElementById('res-low-back').innerText = bottomData.back;
+
+        document.getElementById('res-type').innerText = `Type: ${randomType}`;
+        document.getElementById('res-percent').innerText = (85 + Math.random() * 14).toFixed(1);
 
         document.getElementById('screen-result').classList.remove('hidden');
     }
