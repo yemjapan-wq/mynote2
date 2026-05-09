@@ -283,7 +283,7 @@ body::before {
 
 .r-hdr { text-align: center; margin-bottom: 32px; }
 .r-sid {
-  font-size: clamp(7px,1.6vw,9px);
+  font-size: clamp(9px,2vw,11px);
   color: #ffffff;
   letter-spacing: .5em;
   margin-bottom: 6px;
@@ -297,7 +297,7 @@ body::before {
   line-height: 1;
 }
 .r-arch {
-  font-size: clamp(11px,2.8vw,16px);
+  font-size: clamp(14px,3.5vw,20px);
   color: var(--p);
   text-shadow: 0 0 8px var(--p);
   letter-spacing: .25em;
@@ -310,7 +310,7 @@ body::before {
   border-left: 1px solid #0f0f0f;
 }
 .r-stitle {
-  font-size: clamp(7px,1.6vw,9px);
+  font-size: clamp(10px,2.2vw,12px);
   letter-spacing: .55em;
   color: #ffffff;
   margin-bottom: 14px;
@@ -319,23 +319,23 @@ body::before {
 
 .fi { margin: 14px 0; }
 .fi-word {
-  font-size: clamp(15px,4vw,22px);
+  font-size: clamp(18px,5vw,28px);
   font-weight: 900;
   color: var(--c);
   text-shadow: 0 0 8px rgba(0,255,65,.5);
   letter-spacing: .05em;
 }
 .fi-f {
-  font-size: clamp(9px,2.2vw,12px);
+  font-size: clamp(12px,2.8vw,15px);
   color: #ffffff;
   margin-top: 3px;
   line-height: 1.5;
 }
 .fi-f::before { content: '▸ '; color: #888; }
 .fi-b {
-  font-size: clamp(9px,2.2vw,12px);
+  font-size: clamp(12px,2.8vw,14px);
   color: var(--p);
-  opacity: .8;
+  opacity: .9;
   margin-top: 2px;
   line-height: 1.5;
 }
@@ -349,7 +349,7 @@ body::before {
   border: 1px solid #161616;
   padding: 16px;
   margin: 20px 0;
-  font-size: clamp(8px,2vw,11px);
+  font-size: clamp(11px,2.5vw,13px);
   line-height: 2.1;
   color: #ffffff;
   letter-spacing: .08em;
@@ -365,14 +365,14 @@ body::before {
   line-height: 1;
 }
 .compat-l {
-  font-size: clamp(7px,1.8vw,9px);
+  font-size: clamp(10px,2.2vw,12px);
   color: #ffffff;
   letter-spacing: .55em;
   margin-top: 5px;
 }
 
 .r-desc {
-  font-size: clamp(9px,2.2vw,12px);
+  font-size: clamp(13px,3vw,15px);
   color: #ffffff;
   line-height: 2;
   margin: 16px 0 24px;
@@ -397,13 +397,13 @@ body::before {
   pointer-events: none;
 }
 .cta-lbl {
-  font-size: clamp(7px,1.6vw,9px);
+  font-size: clamp(10px,2.2vw,12px);
   letter-spacing: .55em;
   color: #ffffff;
   margin-bottom: 10px;
 }
 .cta-txt {
-  font-size: clamp(10px,2.3vw,13px);
+  font-size: clamp(13px,3vw,15px);
   color: #ffffff;
   line-height: 1.9;
   margin-bottom: 18px;
@@ -557,7 +557,7 @@ const CONCEPTS = [
   { w:"裏切り",f:"警戒心の維持",           b:"先に自分が裏切ることで傷を最小限にする計算" },
   { w:"束縛",  f:"制限への反発",           b:"誰かに縛られていたいという歪んだ被保護欲求" },
   { w:"喪失",  f:"悲しみの予感",           b:"失う前に自ら壊してしまいたい自暴自棄な執着" },
-  { w:"愛",    f:"無償の献身と精神的結合",    b:"自己欠損の穴埋めと永遠に満たされない飢餓状態" },
+  { w:"性欲",  f:"生命力と根源的衝動",        b:"愛情に飢えた自己を肉体的な接触で埋めようとする代替行動" },
   { w:"依存",  f:"他者との繋がり",         b:"自分一人では存在を維持できない精神的寄生" },
   { w:"崩壊",  f:"秩序の再構築",           b:"すべてをゼロに戻し責任から逃れたい衝動" },
   { w:"嫉妬",  f:"対抗心と羨望",           b:"手に入らないものを呪うことで自分を守る防衛" },
@@ -1245,7 +1245,7 @@ function showResult(primaryW, suppressedW) {
         注視パターンが示す<strong>深層構造の全貌</strong>を有料レポートで開示します。<br><br>
         <em>※ このセッションデータは閲覧終了後に自動消去されます</em>
       </div>
-      <a class="cta-btn" href="${NOTE_URL}" target="_blank" rel="noopener">
+      <a class="cta-btn" href="#" onclick="return false;">
         UNLOCK FULL REPORT — ${NOTE_PRICE}
       </a>
     </div>
