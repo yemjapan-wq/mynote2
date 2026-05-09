@@ -284,7 +284,7 @@ body::before {
 .r-hdr { text-align: center; margin-bottom: 32px; }
 .r-sid {
   font-size: clamp(7px,1.6vw,9px);
-  color: #3a3a3a;
+  color: #ffffff;
   letter-spacing: .5em;
   margin-bottom: 6px;
 }
@@ -312,7 +312,7 @@ body::before {
 .r-stitle {
   font-size: clamp(7px,1.6vw,9px);
   letter-spacing: .55em;
-  color: #4a4a4a;
+  color: #ffffff;
   margin-bottom: 14px;
   text-transform: uppercase;
 }
@@ -327,11 +327,11 @@ body::before {
 }
 .fi-f {
   font-size: clamp(9px,2.2vw,12px);
-  color: #c0c0c0;
+  color: #ffffff;
   margin-top: 3px;
   line-height: 1.5;
 }
-.fi-f::before { content: '▸ '; color: #666; }
+.fi-f::before { content: '▸ '; color: #888; }
 .fi-b {
   font-size: clamp(9px,2.2vw,12px);
   color: var(--p);
@@ -339,11 +339,11 @@ body::before {
   margin-top: 2px;
   line-height: 1.5;
 }
-.fi-b::before { content: '▾ '; color: #441122; }
+.fi-b::before { content: '▾ '; color: #aa3355; }
 
-.r-sup .fi-word { color: #555; text-shadow: none; }
-.r-sup .fi-f    { color: #777; }
-.r-sup .fi-b    { color: #8a3050; }
+.r-sup .fi-word { color: #888; text-shadow: none; }
+.r-sup .fi-f    { color: #ffffff; }
+.r-sup .fi-b    { color: #cc4466; }
 
 .phys {
   border: 1px solid #161616;
@@ -351,7 +351,7 @@ body::before {
   margin: 20px 0;
   font-size: clamp(8px,2vw,11px);
   line-height: 2.1;
-  color: #888;
+  color: #ffffff;
   letter-spacing: .08em;
 }
 .phys span { color: var(--b); }
@@ -366,20 +366,20 @@ body::before {
 }
 .compat-l {
   font-size: clamp(7px,1.8vw,9px);
-  color: #666;
+  color: #ffffff;
   letter-spacing: .55em;
   margin-top: 5px;
 }
 
 .r-desc {
   font-size: clamp(9px,2.2vw,12px);
-  color: #d0d0d0;
+  color: #ffffff;
   line-height: 2;
   margin: 16px 0 24px;
   letter-spacing: .05em;
 }
 .r-desc .hi { color: var(--c); }
-.r-desc .lo { color: #666; }
+.r-desc .lo { color: #888; }
 
 .cta-box {
   border: 1px solid rgba(0,245,255,.12);
@@ -399,17 +399,17 @@ body::before {
 .cta-lbl {
   font-size: clamp(7px,1.6vw,9px);
   letter-spacing: .55em;
-  color: #555;
+  color: #ffffff;
   margin-bottom: 10px;
 }
 .cta-txt {
   font-size: clamp(10px,2.3vw,13px);
-  color: #d0d0d0;
+  color: #ffffff;
   line-height: 1.9;
   margin-bottom: 18px;
 }
 .cta-txt strong { color: var(--y); text-shadow: 0 0 8px rgba(255,230,0,.4); }
-.cta-txt em { color: #888; font-style: normal; font-size: .9em; }
+.cta-txt em { color: #aaaaaa; font-style: normal; font-size: .9em; }
 
 .cta-btn {
   display: inline-block;
@@ -543,8 +543,7 @@ const CONCEPTS = [
   { w:"自由",  f:"解放と自己決定",         b:"責任の放棄と孤独への予感" },
   { w:"富",    f:"物質的安定と強者の証",   b:"金銭以外で愛されない恐怖" },
   { w:"愛",    f:"献身と精神的結合",       b:"自己欠損の穴埋めと飢餓状態" },
-  { w:"成功",  f:"自己実現と羨望",         b:"存在価値消失への脅迫観念" },
-  { w:"変革",  f:"現状打破と新天地",       b:"過去の自己への嫌悪と逃避" },
+  { w:"成功",  f:"自己実現と羨望",         b:"存在価値消失への脅迫観念" },  { w:"変革",  f:"現状打破と新天地",       b:"過去の自己への嫌悪と逃避" },
   { w:"承認",  f:"肯定と所属",             b:"自尊心欠如と評価への隷属" },
   { w:"安息",  f:"平穏と安定",             b:"競争限界と社会的な死への誘惑" },
   { w:"支配",  f:"統制と掌握",             b:"無力感に対する反動的渇望" },
@@ -558,7 +557,7 @@ const CONCEPTS = [
   { w:"裏切り",f:"警戒心の維持",           b:"先に自分が裏切ることで傷を最小限にする計算" },
   { w:"束縛",  f:"制限への反発",           b:"誰かに縛られていたいという歪んだ被保護欲求" },
   { w:"喪失",  f:"悲しみの予感",           b:"失う前に自ら壊してしまいたい自暴自棄な執着" },
-  { w:"凡庸",  f:"平穏な市民の自覚",       b:"その他大勢に埋没することへの耐え難い嫌悪" },
+  { w:"愛",    f:"無償の献身と精神的結合",    b:"自己欠損の穴埋めと永遠に満たされない飢餓状態" },
   { w:"依存",  f:"他者との繋がり",         b:"自分一人では存在を維持できない精神的寄生" },
   { w:"崩壊",  f:"秩序の再構築",           b:"すべてをゼロに戻し責任から逃れたい衝動" },
   { w:"嫉妬",  f:"対抗心と羨望",           b:"手に入らないものを呪うことで自分を守る防衛" },
@@ -574,7 +573,7 @@ const CONCEPTS = [
   { w:"境界",  f:"適切な距離感",           b:"誰にも踏み込まれたくない絶対的な心の聖域" },
   { w:"導き",  f:"示唆の希求",             b:"自分の人生の舵取りを任せたいという服従心" },
   { w:"共鳴",  f:"深いシンクロ",           b:"独りではないと思い込みたい究極の同調圧力" },
-  { w:"深淵",  f:"内奥の探究",             b:"自己の深層にある狂気に対する恐れと誘惑" },
+  { w:"金",    f:"豊かさと安心の象徴",       b:"価値を数字に換算しなければ自分を保てない強迫" },
   { w:"使命",  f:"社会的責任",             b:"自分の存在意義を義務にすり替える自己犠牲" },
 ];
 
