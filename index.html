@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>未来ノート ― 宿命同期儀式</title>
+  <title>未来ノート ― 体質同期測定</title>
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,7 +16,7 @@
       --gold-lt: #F0D870;
       --gold-dk: #8B6914;
       --text:    #E8DCC8;
-      --text-d:  rgba(232,220,200,0.42);
+      --text-d:  rgba(232,220,200,0.70);
       --font:    'Shippori Mincho','Hiragino Mincho Pro',serif;
       --rc:      213.6; /* 2π × 34 */
     }
@@ -85,7 +85,7 @@
       line-height: 1.25;
     }
     .t-sub { font-size:clamp(.9rem,4vw,1.25rem); letter-spacing:.38em; color:rgba(212,175,55,.48); margin-bottom:36px; text-align:center; margin-top:4px; }
-    .intro-desc { font-size:clamp(.7rem,3vw,.82rem); color:var(--text-d); text-align:center; letter-spacing:.14em; line-height:2.3; margin-bottom:44px; max-width:300px; }
+    .intro-desc { font-size:clamp(.82rem,3.5vw,.95rem); color:var(--text); text-align:center; letter-spacing:.1em; line-height:2.3; margin-bottom:44px; max-width:300px; }
     .btn-r {
       position:relative; overflow:hidden;
       background:transparent; border:1px solid var(--gold);
@@ -102,7 +102,21 @@
     .btn-r:active::before, .btn-r:hover::before { transform:translateX(0); }
     .btn-r:active, .btn-r:hover { color:var(--bg); }
     .btn-r span { position:relative; z-index:1; }
-    .intro-note { margin-top:22px; font-size:.58rem; color:rgba(212,175,55,.18); letter-spacing:.28em; text-align:center; max-width:280px; line-height:1.8; }
+    .intro-note { margin-top:22px; font-size:.62rem; color:rgba(212,175,55,.38); letter-spacing:.18em; text-align:center; max-width:280px; line-height:1.9; }
+
+    /* ── GUIDE ── */
+    .guide-ttl { font-size:clamp(1rem,4.5vw,1.3rem); font-weight:600; letter-spacing:.2em; color:var(--gold-lt); text-align:center; margin-bottom:32px; }
+    .guide-list { list-style:none; max-width:320px; width:100%; }
+    .guide-list li {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:14px 0; border-bottom:1px solid rgba(212,175,55,.12);
+      font-size:clamp(.82rem,3.8vw,.95rem); line-height:1.85;
+      color:var(--text); letter-spacing:.06em;
+    }
+    .guide-list li:last-child { border-bottom:none; }
+    .guide-num { color:var(--gold); font-size:.8rem; font-weight:600; margin-top:.15em; flex-shrink:0; letter-spacing:0; }
+    .guide-note { margin-top:24px; font-size:.68rem; color:rgba(212,175,55,.55); letter-spacing:.2em; text-align:center; line-height:1.9; max-width:300px; }
+    .guide-sound { margin-bottom:26px; background:rgba(212,175,55,.08); border:1px solid rgba(212,175,55,.28); padding:10px 20px; font-size:.8rem; color:var(--gold); letter-spacing:.18em; text-align:center; }
 
     /* ── LOADING ── */
     .lg { font-size:2.2rem; color:rgba(212,175,55,.3); margin-bottom:22px; animation:gr 5s linear infinite; }
@@ -141,7 +155,7 @@
       letter-spacing:.06em; line-height:1.6; color:var(--text-d); white-space:pre;
     }
 
-    .s-instr { font-size:clamp(.68rem,3vw,.8rem); color:var(--text-d); text-align:center; letter-spacing:.18em; line-height:2.2; margin-top:10px; }
+    .s-instr { font-size:clamp(.78rem,3.5vw,.92rem); color:var(--text); text-align:center; letter-spacing:.14em; line-height:2.2; margin-top:10px; }
     .nf { min-height:1.1em; font-size:.58rem; letter-spacing:.22em; color:rgba(212,175,55,.28); text-align:center; margin-top:4px; }
 
     .prog { display:flex; gap:9px; margin-top:28px; }
@@ -161,7 +175,7 @@
     /* ── DESIRE ── */
     .dq { font-size:clamp(1.3rem,6.5vw,2.1rem); font-weight:600; text-align:center; letter-spacing:.1em; line-height:1.95; white-space:pre-line; margin-bottom:26px; }
     .dopts { display:flex; flex-direction:column; gap:9px; align-items:center; }
-    .dopt { font-size:.7rem; letter-spacing:.22em; color:var(--text-d); }
+    .dopt { font-size:.78rem; letter-spacing:.14em; color:var(--text); }
     .dopt strong { color:var(--gold); font-weight:600; }
     .tbar { width:170px; height:1px; background:rgba(212,175,55,.13); margin-top:26px; overflow:hidden; }
     .tfill { height:100%; width:100%; background:var(--gold); transform-origin:left; will-change:transform; }
@@ -172,10 +186,10 @@
     .r-gem { position:absolute; top:-.65em; left:50%; transform:translateX(-50%); background:var(--bg); padding:0 10px; color:var(--gold); font-size:.95rem; }
     .r-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(212,175,55,.08); }
     .r-row:last-child { border-bottom:none; }
-    .rk { font-size:.68rem; letter-spacing:.24em; color:var(--text-d); }
-    .rv { font-size:.82rem; font-weight:600; letter-spacing:.1em; color:var(--gold); }
+    .rk { font-size:.76rem; letter-spacing:.18em; color:var(--text); }
+    .rv { font-size:.88rem; font-weight:600; letter-spacing:.1em; color:var(--gold); }
     .rv.synced { color:#8EE88E; font-size:.68rem; }
-    .r-msg { margin-top:26px; font-size:.76rem; line-height:2.3; text-align:center; color:var(--text-d); max-width:310px; letter-spacing:.06em; }
+    .r-msg { margin-top:26px; font-size:.82rem; line-height:2.3; text-align:center; color:var(--text); max-width:310px; letter-spacing:.06em; }
     .r-msg em { color:var(--text); font-style:normal; }
     .btn-redo { margin-top:24px; background:none; border:none; cursor:pointer; font-family:var(--font); font-size:.68rem; color:rgba(212,175,55,.28); letter-spacing:.3em; padding:8px; transition:color .3s; }
     .btn-redo:hover, .btn-redo:active { color:rgba(212,175,55,.7); }
@@ -211,16 +225,42 @@
 
   <!-- INTRO -->
   <div class="sc on" id="s-intro">
-    <div class="eyebrow">∴ 宿命同期システム ∴</div>
+    <div class="eyebrow">∴ 体質同期システム ∴</div>
     <h1 class="t-main">未来ノート</h1>
-    <div class="t-sub">宿命同期儀式</div>
+    <div class="t-sub">体質測定</div>
     <p class="intro-desc">
       あなたの血液型・誕生日をAIと同期します<br>
       念じながら、ゆっくりと目を閉じてください<br>
       カメラへのアクセスが必要です
     </p>
-    <button class="btn-r" id="btnStart"><span>儀式を開始する</span></button>
+    <button class="btn-r" id="btnStart"><span>測定を開始する</span></button>
     <div class="intro-note">カメラ映像はお使いの端末内でのみ処理され<br>外部サーバーへの送信は一切行いません</div>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="sc" id="s-guide">
+    <div class="guide-ttl">測定の手順</div>
+    <div class="guide-sound">🔊 音声をオンにしてください</div>
+    <ul class="guide-list">
+      <li>
+        <span class="guide-num">①</span>
+        <span>血液型・誕生月・誕生日の順に画面に表示されます</span>
+      </li>
+      <li>
+        <span class="guide-num">②</span>
+        <span>自分の情報が表示されたら、<strong style="color:var(--gold)">ゆっくり目を閉じてください</strong></span>
+      </li>
+      <li>
+        <span class="guide-num">③</span>
+        <span>同期が完了すると音が鳴ります。目を開けて次の測定に移ってください</span>
+      </li>
+      <li>
+        <span class="guide-num">④</span>
+        <span>最後に3つの質問に答えます。「はい」なら目を閉じ、「いいえ」なら待つだけでOKです</span>
+      </li>
+    </ul>
+    <p class="guide-note">明るい場所でお試しください<br>カメラを顔の正面に向けてお持ちください</p>
+    <button class="btn-r" id="btnGuide" style="margin-top:32px;"><span>測定を始める</span></button>
   </div>
 
   <!-- LOADING -->
@@ -273,7 +313,7 @@
       <div id="rRows"></div>
     </div>
     <p class="r-msg" id="rMsg"></p>
-    <button class="btn-redo" id="btnRedo">▸ 再儀式</button>
+    <button class="btn-redo" id="btnRedo">▸ もう一度測定する</button>
   </div>
 
   <!-- ERROR -->
@@ -361,7 +401,7 @@ const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
 
 /* ═══ DOM ═══ */
 const $=id=>document.getElementById(id);
-const SCNS=['intro','loading','sync','desire','result','error'];
+const SCNS=['intro','guide','loading','sync','desire','result','error'];
 function show(n){
   SCNS.forEach(k=>{ const e=$('s-'+k); if(e)e.classList.toggle('on',k===n); });
   S.phase=n;
@@ -543,7 +583,7 @@ function onFMR(r){
 }
 
 async function loadFM(){
-  $('lt').textContent='MediaPipeを初期化中…';
+  $('lt').textContent='システムを初期化中…';
   faceMesh=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
   faceMesh.setOptions({maxNumFaces:1,refineLandmarks:false,minDetectionConfidence:.5,minTrackingConfidence:.5});
   faceMesh.onResults(onFMR);
@@ -587,9 +627,13 @@ function resetAll(){
 }
 
 /* ═══ START ═══ */
-async function startRitual(){
+function startRitual(){
   initAudio();
-  show('loading');$('lt').textContent='儀式の扉を開いています…';
+  show('guide');
+}
+
+async function startActual(){
+  show('loading');$('lt').textContent='測定を準備しています…';
   const ok=await checkCam();
   if(!ok){show('error');$('eTxt').textContent='カメラへのアクセスが拒否されました。\nブラウザ設定でカメラを許可してから\n再度お試しください。';return;}
   try{await loadFM();}
@@ -599,6 +643,7 @@ async function startRitual(){
 
 /* ═══ EVENTS ═══ */
 $('btnStart').addEventListener('click',startRitual);
+$('btnGuide').addEventListener('click',startActual);
 $('btnRedo').addEventListener('click',resetAll);
 $('btnRetry').addEventListener('click',resetAll);
 $('btnM').addEventListener('click',manualSel);
