@@ -443,31 +443,40 @@ function buildStars(){
 }
 
 /* ═══ ROLLING EYE DETECTION ═══
-   閾値固定をやめ、直近フレームの開眼ベースライン比較で閉眼判定
-   個人差・カメラ距離・照明に依存しない                          */
-const eyeHistory = [];
-const EYE_WIN   = 45;   // 保持フレーム数（約1.5秒）
-const EYE_RATIO = 0.52; // ベースラインの52%未満で「閉じた」と判定
-const EYE_GRACE = 20;   // 開始直後の猶予フレーム数
+   非対称更新：目を開けると基準値が上がる、閉じても下がらない   */
+let eyeBaseline = -1;
+let eyeFrameCount = 0;
+const EYE_GRACE    = 20;    // 猶予フレーム
+const ALPHA_OPEN   = 0.12;  // 目が開いたとき（素早く追従）
+const ALPHA_CLOSE  = 0.005; // 目が閉じたとき（ほぼ固定）
+const EYE_RATIO    = 0.80;  // baseの80%未満になったら閉じたと判定
 
 function isEyeClosed(g) {
-  eyeHistory.push(g);
-  if (eyeHistory.length > EYE_WIN) eyeHistory.shift();
-  if (eyeHistory.length < EYE_GRACE) {
-    $('dbg').textContent = `gap:${g.toFixed(4)}\n猶予中(${eyeHistory.length}/${EYE_GRACE})`;
+  eyeFrameCount++;
+  if (eyeBaseline < 0) eyeBaseline = g;
+
+  // 非対称更新：上がるとき速い、下がるとき遅い
+  if (g > eyeBaseline) {
+    eyeBaseline = eyeBaseline * (1 - ALPHA_OPEN) + g * ALPHA_OPEN;
+  } else {
+    eyeBaseline = eyeBaseline * (1 - ALPHA_CLOSE) + g * ALPHA_CLOSE;
+  }
+
+  if (eyeFrameCount < EYE_GRACE) {
+    $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${eyeBaseline.toFixed(4)}\n猶予中(${eyeFrameCount}/${EYE_GRACE})`;
     return false;
   }
 
-  const sorted = [...eyeHistory].sort((a, b) => b - a);
-  const base = sorted[Math.floor(sorted.length * 0.1)] || sorted[0];
-  const ratio = base > 0 ? g / base : 1;
-  const closed = base > 0 && g < base * 0.45;
-
-  $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${base.toFixed(4)}\nratio:${ratio.toFixed(2)}\n${closed ? '▶ 閉眼' : '開眼'}`;
+  const ratio = eyeBaseline > 0 ? g / eyeBaseline : 1;
+  const closed = ratio < EYE_RATIO;
+  $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${eyeBaseline.toFixed(4)}\nratio:${ratio.toFixed(2)}\n${closed ? '▶ 閉眼' : '開眼'}`;
   return closed;
 }
 
-function resetEyeHistory() { eyeHistory.length = 0; }
+function resetEyeHistory() {
+  eyeBaseline = -1;
+  eyeFrameCount = 0;
+}
 
 /* ═══ SYNC FLOW ═══ */
 function beginSync(step,items,label){
