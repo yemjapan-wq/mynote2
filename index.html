@@ -215,6 +215,7 @@
     @keyframes fp { 0%{opacity:1} 100%{opacity:0} }
     .fbar { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); font-size:.56rem; letter-spacing:.34em; color:rgba(212,175,55,.18); transition:color .5s; pointer-events:none; white-space:nowrap; }
     .fbar.on { color:rgba(212,175,55,.5); }
+    #dbg { position:fixed; top:10px; right:10px; font-size:11px; color:#0f0; background:rgba(0,0,0,.7); padding:6px 10px; border-radius:4px; font-family:monospace; pointer-events:none; line-height:1.7; z-index:999; }
   </style>
 </head>
 <body>
@@ -333,6 +334,7 @@
 <div class="aura" id="aura"></div>
 <div class="flash" id="flash"></div>
 <div class="fbar" id="fbar">顔検出待機中</div>
+<div id="dbg">待機中</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -451,14 +453,18 @@ const EYE_GRACE = 20;   // 開始直後の猶予フレーム数
 function isEyeClosed(g) {
   eyeHistory.push(g);
   if (eyeHistory.length > EYE_WIN) eyeHistory.shift();
-  if (eyeHistory.length < EYE_GRACE) return false;
+  if (eyeHistory.length < EYE_GRACE) {
+    $('dbg').textContent = `gap:${g.toFixed(4)}\n猶予中(${eyeHistory.length}/${EYE_GRACE})`;
+    return false;
+  }
 
-  // 90パーセンタイル = 「目が最大に開いているときの基準値」
-  // 閉じたフレームが混入しても上位10%は下がらない
   const sorted = [...eyeHistory].sort((a, b) => b - a);
   const base = sorted[Math.floor(sorted.length * 0.1)] || sorted[0];
+  const ratio = base > 0 ? g / base : 1;
+  const closed = base > 0 && g < base * 0.45;
 
-  return base > 0 && g < base * 0.45;
+  $('dbg').textContent = `gap:${g.toFixed(4)}\nbase:${base.toFixed(4)}\nratio:${ratio.toFixed(2)}\n${closed ? '▶ 閉眼' : '開眼'}`;
+  return closed;
 }
 
 function resetEyeHistory() { eyeHistory.length = 0; }
