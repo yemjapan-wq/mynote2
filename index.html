@@ -214,18 +214,19 @@ body::before {
 #word-grid {
   position: fixed; inset: 0;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(6, 1fr);
-  padding: 6vw 4vw;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 12vh 6vw;
   gap: 0;
+  transition: opacity 0.5s ease;
 }
 .wc {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(13px,3.5vw,28px);
+  font-size: clamp(22px,6.5vw,52px);
   font-weight: 900;
-  color: rgba(255,255,255,.9);
+  color: rgba(255,255,255,.92);
   letter-spacing: .04em;
   transition: none;
   animation: wfloat var(--fd,4s) ease-in-out infinite;
@@ -326,11 +327,11 @@ body::before {
 }
 .fi-f {
   font-size: clamp(9px,2.2vw,12px);
-  color: #999;
+  color: #c0c0c0;
   margin-top: 3px;
   line-height: 1.5;
 }
-.fi-f::before { content: '▸ '; color: #555; }
+.fi-f::before { content: '▸ '; color: #666; }
 .fi-b {
   font-size: clamp(9px,2.2vw,12px);
   color: var(--p);
@@ -340,9 +341,9 @@ body::before {
 }
 .fi-b::before { content: '▾ '; color: #441122; }
 
-.r-sup .fi-word { color: #3a3a3a; text-shadow: none; }
-.r-sup .fi-f    { color: #464646; }
-.r-sup .fi-b    { color: #6a2040; }
+.r-sup .fi-word { color: #555; text-shadow: none; }
+.r-sup .fi-f    { color: #777; }
+.r-sup .fi-b    { color: #8a3050; }
 
 .phys {
   border: 1px solid #161616;
@@ -350,7 +351,7 @@ body::before {
   margin: 20px 0;
   font-size: clamp(8px,2vw,11px);
   line-height: 2.1;
-  color: #484848;
+  color: #888;
   letter-spacing: .08em;
 }
 .phys span { color: var(--b); }
@@ -365,20 +366,20 @@ body::before {
 }
 .compat-l {
   font-size: clamp(7px,1.8vw,9px);
-  color: #404040;
+  color: #666;
   letter-spacing: .55em;
   margin-top: 5px;
 }
 
 .r-desc {
   font-size: clamp(9px,2.2vw,12px);
-  color: #686868;
+  color: #d0d0d0;
   line-height: 2;
   margin: 16px 0 24px;
   letter-spacing: .05em;
 }
 .r-desc .hi { color: var(--c); }
-.r-desc .lo { color: #3a3a3a; }
+.r-desc .lo { color: #666; }
 
 .cta-box {
   border: 1px solid rgba(0,245,255,.12);
@@ -398,17 +399,17 @@ body::before {
 .cta-lbl {
   font-size: clamp(7px,1.6vw,9px);
   letter-spacing: .55em;
-  color: #3a3a3a;
+  color: #555;
   margin-bottom: 10px;
 }
 .cta-txt {
   font-size: clamp(10px,2.3vw,13px);
-  color: #7a7a7a;
+  color: #d0d0d0;
   line-height: 1.9;
   margin-bottom: 18px;
 }
 .cta-txt strong { color: var(--y); text-shadow: 0 0 8px rgba(255,230,0,.4); }
-.cta-txt em { color: #3a3a3a; font-style: normal; font-size: .9em; }
+.cta-txt em { color: #888; font-style: normal; font-size: .9em; }
 
 .cta-btn {
   display: inline-block;
@@ -617,6 +618,7 @@ let irisLabel   = 'UNDETERMINED';
 
 let wordScores  = {};
 let wordCells   = [];  // { w, el, rect }
+let pages       = [];  // 3 arrays of 12 concepts
 let gazeX = 0.5, gazeY = 0.5;
 let sampleTimerID = null;
 
@@ -973,17 +975,25 @@ function startDive() {
 // ============================================================
 // SAMPLE PHASE
 // ============================================================
-function buildGrid() {
-  const grid     = document.getElementById('word-grid');
-  grid.innerHTML = '';
-  wordCells      = [];
-  wordScores     = {};
-
+function buildGridData() {
   const shuffled = shuffle(CONCEPTS);
-  shuffled.forEach(c => {
-    wordScores[c.w] = 0;
+  pages = [
+    shuffled.slice(0, 12),
+    shuffled.slice(12, 24),
+    shuffled.slice(24, 36),
+  ];
+  wordScores = {};
+  CONCEPTS.forEach(c => wordScores[c.w] = 0);
+}
+
+function renderPage(idx) {
+  const grid = document.getElementById('word-grid');
+  grid.innerHTML = '';
+  wordCells = [];
+
+  pages[idx].forEach(c => {
     const div = document.createElement('div');
-    div.className  = 'wc';
+    div.className = 'wc';
     div.textContent = c.w;
     div.style.setProperty('--fd', rand(3, 5.5) + 's');
     div.style.setProperty('--dd', (-rand(0, 4)) + 's');
@@ -991,14 +1001,51 @@ function buildGrid() {
     wordCells.push({ w: c.w, el: div, rect: null });
   });
 
-  // Get rects after layout
+  // Get rects after layout paint
   requestAnimationFrame(() => {
-    wordCells.forEach(c => { c.rect = c.el.getBoundingClientRect(); });
+    requestAnimationFrame(() => {
+      wordCells.forEach(c => { c.rect = c.el.getBoundingClientRect(); });
+    });
   });
 }
 
+function startPagedTimer() {
+  const fill = document.getElementById('timer-fill');
+  const PAGE_MS = 10000;
+  const TOTAL_MS = PAGE_MS * 3;
+
+  function runPage(pgIdx) {
+    const pgStart = Date.now();
+
+    sampleTimerID = setInterval(() => {
+      const elapsed = Date.now() - pgStart;
+      const totalElapsed = pgIdx * PAGE_MS + elapsed;
+      fill.style.width = Math.max(0, (1 - totalElapsed / TOTAL_MS) * 100) + '%';
+
+      if (elapsed >= PAGE_MS) {
+        clearInterval(sampleTimerID);
+        if (pgIdx < 2) {
+          // Fade out → swap content → fade in
+          const grid = document.getElementById('word-grid');
+          grid.style.opacity = '0';
+          setTimeout(() => {
+            renderPage(pgIdx + 1);
+            grid.style.opacity = '1';
+            runPage(pgIdx + 1);
+          }, 500);
+        } else {
+          endSample();
+        }
+      }
+    }, 200);
+  }
+
+  runPage(0);
+}
+
 async function startSample() {
-  buildGrid();
+  buildGridData();
+  renderPage(0);
   showScreen('screen-sample');
 
   const video = document.getElementById('sample-video');
@@ -1014,13 +1061,13 @@ async function startSample() {
   } catch {
     // No camera: fall back to randomized scoring
     randomizeScores();
-    startTimer();
+    startPagedTimer();
     return;
   }
 
   if (typeof FaceMesh === 'undefined') {
     randomizeScores();
-    startTimer();
+    startPagedTimer();
     return;
   }
 
@@ -1049,7 +1096,7 @@ async function startSample() {
     requestAnimationFrame(loop);
   }
 
-  startTimer();
+  startPagedTimer();
 }
 
 function randomizeScores() {
@@ -1112,22 +1159,6 @@ function onSampleFrame(res) {
       wordScores[cell.w] = (wordScores[cell.w] || 0) + 1;
     }
   });
-}
-
-function startTimer() {
-  const fill  = document.getElementById('timer-fill');
-  const start = Date.now();
-
-  sampleTimerID = setInterval(() => {
-    const elapsed  = Date.now() - start;
-    const remaining = Math.max(0, SAMPLE_DURATION_MS - elapsed);
-    fill.style.width = (remaining / SAMPLE_DURATION_MS * 100) + '%';
-
-    if (elapsed >= SAMPLE_DURATION_MS) {
-      clearInterval(sampleTimerID);
-      endSample();
-    }
-  }, 200);
 }
 
 function endSample() {
@@ -1249,7 +1280,7 @@ function animateCompat(target) {
 function retryAll() {
   // Reset state
   lockFrames = 0; scanPct = 0;
-  wordScores = {}; wordCells = [];
+  wordScores = {}; wordCells = []; pages = [];
   gazeX = 0.5; gazeY = 0.5;
   irisLabel = 'UNDETERMINED';
   eyeCX = 0.5; eyeCY = 0.5;
