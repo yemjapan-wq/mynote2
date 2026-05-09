@@ -74,6 +74,12 @@
       transition: opacity .75s ease;
     }
     .sc.on { opacity: 1; pointer-events: auto; }
+    #s-guide {
+      justify-content: flex-start;
+      overflow-y: auto;
+      padding-top: 52px;
+      padding-bottom: 52px;
+    }
 
     /* ── INTRO ── */
     .eyebrow { font-size:.62rem; letter-spacing:.6em; color:var(--text-d); margin-bottom:18px; text-align:center; }
@@ -123,15 +129,6 @@
     @keyframes gr { 0%{transform:rotate(0deg);opacity:.2} 25%{opacity:.7} 50%{transform:rotate(180deg);opacity:.2} 75%{opacity:.7} 100%{transform:rotate(360deg);opacity:.2} }
     .lt { font-size:.72rem; letter-spacing:.42em; color:var(--text-d); animation:pulse 1.8s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
-
-    /* ── CALIBRATION ── */
-    .calib-icon { font-size:3rem; margin-bottom:18px; animation:cib 1.2s ease-in-out infinite; }
-    @keyframes cib { 0%,100%{opacity:.4;transform:scale(.95)} 50%{opacity:1;transform:scale(1.05)} }
-    .calib-ttl { font-size:clamp(1rem,4.5vw,1.25rem); font-weight:600; letter-spacing:.2em; color:var(--gold-lt); text-align:center; margin-bottom:10px; }
-    .calib-sub { font-size:clamp(.78rem,3.5vw,.9rem); color:var(--text); text-align:center; letter-spacing:.1em; line-height:2; margin-bottom:28px; max-width:280px; }
-    .calib-bar-wrap { width:200px; height:4px; background:rgba(212,175,55,.12); border-radius:2px; overflow:hidden; }
-    .calib-bar { height:100%; width:0%; background:var(--gold); border-radius:2px; transition:width .1s linear; box-shadow:0 0 8px var(--gold); }
-    .calib-note { margin-top:18px; font-size:.65rem; letter-spacing:.2em; color:rgba(212,175,55,.5); text-align:center; }
 
     /* ── SYNC ── */
     .ph-lbl { font-size:.65rem; letter-spacing:.48em; color:var(--text-d); margin-bottom:16px; text-align:center; text-transform:uppercase; }
@@ -278,15 +275,6 @@
     <div class="lt" id="lt">同期システムを起動中…</div>
   </div>
 
-  <!-- CALIBRATION -->
-  <div class="sc" id="s-calib">
-    <div class="calib-icon">👁</div>
-    <div class="calib-ttl">目を開けたまま待ってください</div>
-    <div class="calib-sub">目の開き幅を計測しています<br>そのまま動かないでください</div>
-    <div class="calib-bar-wrap"><div class="calib-bar" id="calibBar"></div></div>
-    <div class="calib-note" id="calibNote">計測中…</div>
-  </div>
-
   <!-- SYNC -->
   <div class="sc" id="s-sync">
     <div class="ph-lbl" id="sLabel">血液型を同期中</div>
@@ -419,7 +407,7 @@ const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
 
 /* ═══ DOM ═══ */
 const $=id=>document.getElementById(id);
-const SCNS=['intro','guide','loading','calib','sync','desire','result','error'];
+const SCNS=['intro','guide','loading','sync','desire','result','error'];
 function show(n){
   SCNS.forEach(k=>{ const e=$('s-'+k); if(e)e.classList.toggle('on',k===n); });
   S.phase=n;
@@ -452,49 +440,28 @@ function buildStars(){
   }
 }
 
-/* ═══ CALIBRATION ═══ */
-const CALIB_MS = 2500; // 計測時間
-let calibSamples = [];
-let calibTimer = null;
+/* ═══ ROLLING EYE DETECTION ═══
+   閾値固定をやめ、直近フレームの開眼ベースライン比較で閉眼判定
+   個人差・カメラ距離・照明に依存しない                          */
+const eyeHistory = [];
+const EYE_WIN   = 45;   // 保持フレーム数（約1.5秒）
+const EYE_RATIO = 0.52; // ベースラインの52%未満で「閉じた」と判定
+const EYE_GRACE = 20;   // 開始直後の猶予フレーム数
 
-function startCalib(){
-  calibSamples = [];
-  show('calib');
-  $('calibBar').style.width = '0%';
-  $('calibNote').textContent = '計測中…';
-  S.phase = 'calib';
-  const start = Date.now();
+function isEyeClosed(g) {
+  eyeHistory.push(g);
+  if (eyeHistory.length > EYE_WIN) eyeHistory.shift();
+  if (eyeHistory.length < EYE_GRACE) return false;
 
-  calibTimer = setInterval(()=>{
-    const elapsed = Date.now() - start;
-    const pct = Math.min(elapsed / CALIB_MS * 100, 100);
-    $('calibBar').style.width = pct + '%';
-    if(elapsed >= CALIB_MS){
-      clearInterval(calibTimer);
-      finishCalib();
-    }
-  }, 50);
+  // 上位60%の平均 = 「目が開いているときの基準値」
+  const sorted = [...eyeHistory].sort((a, b) => b - a);
+  const take   = Math.ceil(sorted.length * 0.6);
+  const base   = sorted.slice(0, take).reduce((a, b) => a + b, 0) / take;
+
+  return base > 0 && g < base * EYE_RATIO;
 }
 
-function onCalibFrame(lm){
-  if(S.phase !== 'calib') return;
-  const g = eyeGap(lm);
-  if(g > 0) calibSamples.push(g);
-}
-
-function finishCalib(){
-  if(calibSamples.length < 5){
-    // サンプルが取れなかった → デフォルト閾値のまま進む
-    $('calibNote').textContent = '計測スキップ（デフォルト値を使用）';
-    setTimeout(()=> beginSync(0, BLOOD, '血液型を同期中'), 800);
-    return;
-  }
-  const avg = calibSamples.reduce((a,b)=>a+b,0) / calibSamples.length;
-  CFG.EYE = avg * 0.45; // 開眼時の45%を閾値に設定
-  console.log(`[calib] samples:${calibSamples.length} avg:${avg.toFixed(4)} threshold:${CFG.EYE.toFixed(4)}`);
-  $('calibNote').textContent = '計測完了 ✦';
-  setTimeout(()=> beginSync(0, BLOOD, '血液型を同期中'), 600);
-}
+function resetEyeHistory() { eyeHistory.length = 0; }
 
 /* ═══ SYNC FLOW ═══ */
 function beginSync(step,items,label){
@@ -636,9 +603,8 @@ function onFMR(r){
   if(r.multiFaceLandmarks&&r.multiFaceLandmarks.length>0){
     setFbar(true);
     const lm = r.multiFaceLandmarks[0];
-    const g = eyeGap(lm);
-    if(S.phase==='calib')  onCalibFrame(lm);
-    const cl=g<=CFG.EYE;
+    const g  = eyeGap(lm);
+    const cl = isEyeClosed(g);
     if(S.phase==='sync')   onSyncEye(cl);
     if(S.phase==='desire') onDesireEye(cl);
   }else{
@@ -686,6 +652,7 @@ function resetAll(){
   if(S.itm)clearTimeout(S.itm);if(S.dtm)clearTimeout(S.dtm);
   Object.assign(S,{phase:'intro',step:0,items:[],idx:0,inTr:false,cs:null,itm:null,fok:false,
     blood:null,month:null,dg:null,day:null,di:0,da:false,dst:0,dtm:null,desires:[null,null,null]});
+  resetEyeHistory();
   setAura(false);
   const fb=$('fbar');fb.textContent='顔検出待機中';fb.classList.remove('on');
   show('intro');
@@ -703,15 +670,15 @@ async function startActual(){
   if(!ok){show('error');$('eTxt').textContent='カメラへのアクセスが拒否されました。\nブラウザ設定でカメラを許可してから\n再度お試しください。';return;}
   try{
     await loadFM();
-    startCalib(); // キャリブレーション開始
   }
   catch(e){
     console.warn('[未来ノート] MediaPipe失敗 → 手動モードで起動',e);
     enableManual();
     $('lt').textContent='手動モードで起動中…';
     await new Promise(r=>setTimeout(r,800));
-    beginSync(0,BLOOD,'血液型を同期中');
   }
+  resetEyeHistory();
+  beginSync(0,BLOOD,'血液型を同期中');
 }
 
 /* ═══ EVENTS ═══ */
