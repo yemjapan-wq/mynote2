@@ -453,12 +453,12 @@ function isEyeClosed(g) {
   if (eyeHistory.length > EYE_WIN) eyeHistory.shift();
   if (eyeHistory.length < EYE_GRACE) return false;
 
-  // 上位60%の平均 = 「目が開いているときの基準値」
+  // 90パーセンタイル = 「目が最大に開いているときの基準値」
+  // 閉じたフレームが混入しても上位10%は下がらない
   const sorted = [...eyeHistory].sort((a, b) => b - a);
-  const take   = Math.ceil(sorted.length * 0.6);
-  const base   = sorted.slice(0, take).reduce((a, b) => a + b, 0) / take;
+  const base = sorted[Math.floor(sorted.length * 0.1)] || sorted[0];
 
-  return base > 0 && g < base * EYE_RATIO;
+  return base > 0 && g < base * 0.45;
 }
 
 function resetEyeHistory() { eyeHistory.length = 0; }
