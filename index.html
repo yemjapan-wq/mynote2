@@ -447,8 +447,125 @@ body::before {
 .retry-btn:hover { color: #444; border-color: #333; }
 
 /* ============================================================
-   DISCLAIMER SCREEN
+   POST-RESULT LP
 ============================================================ */
+.lp-wrap {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* 区切り線 */
+.lp-divider {
+  text-align: center;
+  padding: 48px 0 36px;
+  position: relative;
+}
+.lp-divider::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, transparent, rgba(0,245,255,.3));
+  margin: 0 auto 24px;
+}
+.lp-divider-txt {
+  font-size: clamp(8px,1.8vw,10px);
+  letter-spacing: .55em;
+  color: var(--b);
+  text-shadow: 0 0 8px var(--b);
+}
+
+/* ブロック共通 */
+.lp-block {
+  padding: 32px 0;
+}
+.lp-block + .lp-block {
+  border-top: 1px solid #0a0a0a;
+}
+
+/* テキストスタイル */
+.lp-big {
+  font-size: clamp(20px,5.5vw,30px);
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.7;
+  letter-spacing: .04em;
+  text-align: center;
+}
+.lp-big em {
+  color: var(--b);
+  font-style: normal;
+  text-shadow: 0 0 12px var(--b);
+}
+
+.lp-mid {
+  font-size: clamp(14px,3.5vw,18px);
+  color: #ffffff;
+  line-height: 2;
+  letter-spacing: .04em;
+}
+.lp-mid.center { text-align: center; }
+
+.lp-small {
+  font-size: clamp(12px,3vw,15px);
+  color: #888;
+  line-height: 2.2;
+  letter-spacing: .04em;
+}
+
+.lp-cyan {
+  font-size: clamp(14px,3.5vw,18px);
+  color: var(--b);
+  text-shadow: 0 0 10px var(--b);
+  text-align: center;
+  letter-spacing: .08em;
+  line-height: 1.8;
+}
+
+.lp-pink {
+  font-size: clamp(18px,5vw,26px);
+  font-weight: 900;
+  color: var(--p);
+  text-shadow: 0 0 16px var(--p);
+  text-align: center;
+  line-height: 1.7;
+  letter-spacing: .04em;
+}
+
+/* 余白 */
+.lp-space { height: 28px; }
+.lp-space-lg { height: 44px; }
+
+/* ブロック5 グレー背景 */
+.lp-dark-block {
+  background: #060606;
+  border: 1px solid #111;
+  padding: 28px 20px;
+  margin: 0 0 24px;
+  text-align: center;
+}
+.lp-quote {
+  font-size: clamp(14px,3.8vw,18px);
+  color: #aaaaaa;
+  line-height: 2.2;
+  letter-spacing: .04em;
+  font-style: normal;
+}
+.lp-quote + .lp-quote {
+  margin-top: 12px;
+}
+
+/* 署名 */
+.lp-sig {
+  text-align: right;
+  font-size: clamp(10px,2.2vw,12px);
+  color: #333;
+  letter-spacing: .25em;
+  padding: 24px 0 8px;
+  line-height: 2;
+}
+
+
 #screen-disclaimer {
   background: #000;
   flex-direction: column;
@@ -1417,6 +1534,164 @@ function showResult(primaryW, suppressedW) {
     <div class="ent-notice">
       ※ 本コンテンツはエンターテインメントです。科学的根拠に基づくものではありません。
     </div>
+
+    <!-- ============ POST-RESULT LP ============ -->
+    <div class="lp-wrap">
+
+      <!-- 区切り -->
+      <div class="lp-divider">
+        <div class="lp-divider-txt">── なぜ、この瞳があなたを選んだのか ──</div>
+      </div>
+
+      <!-- ブロック1 -->
+      <div class="lp-block" style="text-align:center;">
+        <div class="lp-big">知ってる？</div>
+        <div class="lp-space"></div>
+        <div class="lp-mid center">
+          瞳は、生まれる前から<br>ずっと変わらない。
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-mid center">
+          瞳は、あなたが世界を見る前から<br>あなたを見ている。
+        </div>
+      </div>
+
+      <!-- ブロック2 -->
+      <div class="lp-block">
+        <div class="lp-big">
+          あなたは今日、<br>
+          自分の瞳と向き合った。<br>
+          <div class="lp-space"></div>
+          そしてあなた自身を、<br>見つめた。
+        </div>
+        <div class="lp-space-lg"></div>
+        <div class="lp-cyan">
+          その瞬間から<br>
+          あなたはもう、<br>
+          自分の物語の主人公に<br>
+          戻りはじめている。
+        </div>
+      </div>
+
+      <!-- ブロック3 -->
+      <div class="lp-block">
+        <div class="lp-small">
+          大人になるにつれて、<br>
+          人は「誰かのための自分」に<br>
+          なっていく。<br>
+          <br>
+          子供のため。<br>
+          パートナーのため。<br>
+          会社のため。<br>
+          <br>
+          気づいたら、<br>
+          自分の物語の主人公が<br>
+          誰かに変わっていた。<br>
+          <br>
+          俺は、それが<br>
+          ずっと悔しかった。
+        </div>
+      </div>
+
+      <!-- ブロック4 -->
+      <div class="lp-block" style="text-align:center;">
+        <div class="lp-mid center">
+          お母さんのお腹の中にいた時から、<br>
+          あなたの瞳の紋様は<br>
+          もう完成していた。
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-small" style="text-align:center;">
+          名前がつく前から。<br>
+          役割を与えられる前から。<br>
+          <br>
+          誰よりも長く、<br>
+          あなたのそばにいる。
+        </div>
+        <div class="lp-space-lg"></div>
+        <div class="lp-cyan">NEURAL DIVEが見ているのは、<br>そこだ。</div>
+      </div>
+
+      <!-- ブロック5 -->
+      <div class="lp-block">
+        <div class="lp-dark-block">
+          <div class="lp-quote">「離れたいのに、離れられない」</div>
+          <div class="lp-quote">「自分には、何もない」</div>
+          <div class="lp-quote">「なんで俺だけ、こうなんだ」</div>
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-mid">
+          そのドロドロした感情を、<br>
+          「悩み」で終わらせたくなかった。
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-mid">
+          苦しみさえも、<br>
+          あなただけの物語の<br>
+          愛おしい伏線だと——<br>
+          <br>
+          そう思えるようになってほしかった。
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-mid">
+          だから俺は、<br>
+          このシステムを作った。
+        </div>
+      </div>
+
+      <!-- ブロック6 -->
+      <div class="lp-block" style="text-align:center;">
+        <div class="lp-mid center">
+          占いじゃない。<br>
+          性格診断でもない。
+        </div>
+        <div class="lp-space-lg"></div>
+        <div class="lp-pink">
+          「あなたの瞳が、<br>
+          この瞬間、<br>
+          この言葉を選んだ」
+        </div>
+        <div class="lp-space-lg"></div>
+        <div class="lp-mid center">
+          それだけが、事実だ。
+        </div>
+        <div class="lp-space"></div>
+        <div class="lp-mid center">
+          嘘をつけない場所から、<br>
+          本当の物語が始まる。
+        </div>
+      </div>
+
+      <!-- ブロック7 CTA -->
+      <div class="lp-block" style="text-align:center;">
+        <div class="lp-cyan" style="font-size:clamp(8px,1.8vw,10px); letter-spacing:.55em;">── FULL REPORT ──</div>
+        <div class="lp-space"></div>
+        <div class="lp-mid center">
+          あなたの結果が示した<br>
+          深層の全貌と、<br>
+          <br>
+          21のアーキタイプの<br>
+          完全解説を<br>
+          有料レポートで開示している。
+        </div>
+        <div class="lp-space-lg"></div>
+        <div class="lp-small" style="text-align:center;">
+          知るか、知らないままにするか。<br>
+          それも、あなたが決める。
+        </div>
+        <div class="lp-space-lg"></div>
+        <a class="cta-btn" href="#" onclick="return false;">
+          UNLOCK FULL REPORT — ${NOTE_PRICE}
+        </a>
+      </div>
+
+      <!-- 署名 -->
+      <div class="lp-sig">
+        NEURAL DIVE 制作者<br>
+        オレンジ仮面
+      </div>
+
+    </div><!-- /lp-wrap -->
   `;
 
   document.getElementById('rc').innerHTML = html;
