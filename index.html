@@ -756,7 +756,7 @@ body::before {
 <!-- ===== BOOT ===== -->
 <div id="screen-boot" class="screen active">
   <div class="boot-logo">NEURAL DIVE</div>
-  <div class="boot-sub">SUBCONSCIOUS PROFILING ENGINE · v4.2.1</div>
+  <div class="boot-sub">SUBCONSCIOUS PROFILING ENGINE · v4.2.1 · EIYU-01</div>
   <div class="boot-log" id="boot-log"></div>
   <button id="boot-btn" onclick="showDisclaimer()">INITIALIZE SCAN</button>
 </div>
@@ -1521,7 +1521,7 @@ function showResult(primaryW, suppressedW) {
 
   const html = `
     <div class="r-hdr">
-      <div class="r-sid">SESSION: ${sid} · PROFILING COMPLETE · ${new Date().toISOString().slice(0,19)}Z</div>
+      <div class="r-sid">SESSION: ${sid} · PROFILING COMPLETE · ${new Date().toISOString().slice(0,19)}Z · EIYU-01</div>
       <div class="r-type" id="r-type-val">${archetype.code}</div>
       <div class="r-arch">${archetype.name}</div>
     </div>
@@ -1710,7 +1710,8 @@ function showResult(primaryW, suppressedW) {
       <!-- 署名 -->
       <div class="lp-sig">
         NEURAL DIVE 制作者<br>
-        オレンジ仮面
+        オレンジ仮面<br>
+        <span style="font-size:.8em; color:#1a1a1a; letter-spacing:.3em;">EIYU-01</span>
       </div>
 
       <!-- シェア -->
