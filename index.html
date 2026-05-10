@@ -222,15 +222,25 @@ body::before {
 }
 .wc {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  animation: wfloat var(--fd,4s) ease-in-out infinite;
+  animation-delay: var(--dd,0s);
+}
+.wc-kanji {
   font-size: clamp(22px,6.5vw,52px);
   font-weight: 900;
   color: rgba(255,255,255,.92);
   letter-spacing: .04em;
-  transition: none;
-  animation: wfloat var(--fd,4s) ease-in-out infinite;
-  animation-delay: var(--dd,0s);
+  line-height: 1.1;
+}
+.wc-en {
+  font-size: clamp(7px,1.8vw,11px);
+  color: #00ff41;
+  letter-spacing: .2em;
+  margin-top: 4px;
+  opacity: .75;
 }
 
 #sample-hdr {
@@ -644,16 +654,16 @@ body::before {
 ============================================================ */
 .share-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin: 20px 0 8px;
 }
 .share-btn {
   flex: 1;
-  padding: 13px 8px;
+  padding: 13px 4px;
   background: transparent;
   font-family: inherit;
-  font-size: clamp(10px,2.5vw,13px);
-  letter-spacing: .15em;
+  font-size: clamp(9px,2.2vw,12px);
+  letter-spacing: .1em;
   cursor: pointer;
   transition: all .3s;
 }
@@ -662,6 +672,12 @@ body::before {
   color: #ffffff;
 }
 .share-x:hover { background: rgba(255,255,255,.08); }
+.share-line {
+  border: 1px solid #06c755;
+  color: #06c755;
+  text-shadow: 0 0 6px rgba(6,199,85,.4);
+}
+.share-line:hover { background: rgba(6,199,85,.08); }
 .share-copy {
   border: 1px solid var(--c);
   color: var(--c);
@@ -809,52 +825,66 @@ const SAMPLE_DURATION_MS = 20000; // サンプリング時間（ms）
 // DATA
 // ============================================================
 const CONCEPTS = [
-  { w:"自由",  f:"解放と自己決定",         b:"責任の放棄と孤独への予感" },
-  { w:"富",    f:"物質的安定と強者の証",   b:"金銭以外で愛されない恐怖" },
-  { w:"愛",    f:"献身と精神的結合",       b:"自己欠損の穴埋めと飢餓状態" },
-  { w:"成功",  f:"自己実現と羨望",         b:"存在価値消失への脅迫観念" },  { w:"変革",  f:"現状打破と新天地",       b:"過去の自己への嫌悪と逃避" },
-  { w:"承認",  f:"肯定と所属",             b:"自尊心欠如と評価への隷属" },
-  { w:"安息",  f:"平穏と安定",             b:"競争限界と社会的な死への誘惑" },
-  { w:"支配",  f:"統制と掌握",             b:"無力感に対する反動的渇望" },
-  { w:"情熱",  f:"没頭と燃焼",             b:"日常を紛らわす一過性の発狂" },
-  { w:"知識",  f:"知的好奇心と武装",       b:"無知への恐怖と優越感の源泉" },
-  { w:"美",    f:"理想の具現",             b:"醜い現実からの強迫的な目逸らし" },
-  { w:"調和",  f:"均衡と摩擦回避",         b:"自己主張放棄による生存戦略" },
-  { w:"孤独",  f:"自己回復の時間",         b:"社会的繋がりを絶たれることへの根源的恐怖" },
-  { w:"停滞",  f:"休息と現状維持",         b:"変化に伴う痛みを極端に恐れる精神的硬直" },
-  { w:"虚無",  f:"達観と受容",             b:"すべてが徒労に終わることへの諦めと防衛" },
-  { w:"裏切り",f:"警戒心の維持",           b:"先に自分が裏切ることで傷を最小限にする計算" },
-  { w:"束縛",  f:"制限への反発",           b:"誰かに縛られていたいという歪んだ被保護欲求" },
-  { w:"喪失",  f:"悲しみの予感",           b:"失う前に自ら壊してしまいたい自暴自棄な執着" },
-  { w:"性欲",  f:"生命力と根源的衝動",        b:"愛情に飢えた自己を肉体的な接触で埋めようとする代替行動" },
-  { w:"依存",  f:"他者との繋がり",         b:"自分一人では存在を維持できない精神的寄生" },
-  { w:"崩壊",  f:"秩序の再構築",           b:"すべてをゼロに戻し責任から逃れたい衝動" },
-  { w:"嫉妬",  f:"対抗心と羨望",           b:"手に入らないものを呪うことで自分を守る防衛" },
-  { w:"忘却",  f:"記憶の浄化",             b:"直視できない過去からの永久的な逃亡願望" },
-  { w:"静止",  f:"永遠への憧憬",           b:"未来への期待の完全な消失" },
-  { w:"覚醒",  f:"新たな自分への更新",     b:"現在の自分を偽物と定義する強い自己否定" },
-  { w:"決別",  f:"健全な境界線",           b:"憎しみすら残さないほどの冷徹な関係断絶" },
-  { w:"原点",  f:"自己の再発見",           b:"成長の限界を感じて過去の栄光に縋る退行" },
-  { w:"超越",  f:"限界の突破",             b:"人間らしい泥臭い感情を捨て去りたい脱人間化" },
-  { w:"開錠",  f:"真実の探究",             b:"暴いてはいけない内面への禁断の好奇心" },
-  { w:"再生",  f:"失敗からの復活",         b:"死への恐怖の裏返しとしての病的生への執着" },
-  { w:"混沌",  f:"自由な発想",             b:"秩序による統制への限界と原始的衝動の爆発" },
-  { w:"境界",  f:"適切な距離感",           b:"誰にも踏み込まれたくない絶対的な心の聖域" },
-  { w:"導き",  f:"示唆の希求",             b:"自分の人生の舵取りを任せたいという服従心" },
-  { w:"共鳴",  f:"深いシンクロ",           b:"独りではないと思い込みたい究極の同調圧力" },
-  { w:"金",    f:"豊かさと安心の象徴",       b:"価値を数字に換算しなければ自分を保てない強迫" },
-  { w:"使命",  f:"社会的責任",             b:"自分の存在意義を義務にすり替える自己犠牲" },
+  { w:"自由",  en:"FREEDOM",    f:"解放と自己決定",         b:"責任の放棄と孤独への予感" },
+  { w:"富",    en:"WEALTH",     f:"物質的安定と強者の証",   b:"金銭以外で愛されない恐怖" },
+  { w:"愛",    en:"LOVE",       f:"献身と精神的結合",       b:"自己欠損の穴埋めと飢餓状態" },
+  { w:"成功",  en:"SUCCESS",    f:"自己実現と羨望",         b:"存在価値消失への脅迫観念" },
+  { w:"変革",  en:"CHANGE",     f:"現状打破と新天地",       b:"過去の自己への嫌悪と逃避" },
+  { w:"承認",  en:"APPROVAL",   f:"肯定と所属",             b:"自尊心欠如と評価への隷属" },
+  { w:"安息",  en:"REST",       f:"平穏と安定",             b:"競争限界と社会的な死への誘惑" },
+  { w:"支配",  en:"CONTROL",    f:"統制と掌握",             b:"無力感に対する反動的渇望" },
+  { w:"情熱",  en:"PASSION",    f:"没頭と燃焼",             b:"日常を紛らわす一過性の発狂" },
+  { w:"知識",  en:"KNOWLEDGE",  f:"知的好奇心と武装",       b:"無知への恐怖と優越感の源泉" },
+  { w:"美",    en:"BEAUTY",     f:"理想の具現",             b:"醜い現実からの強迫的な目逸らし" },
+  { w:"調和",  en:"HARMONY",    f:"均衡と摩擦回避",         b:"自己主張放棄による生存戦略" },
+  { w:"孤独",  en:"SOLITUDE",   f:"自己回復の時間",         b:"社会的繋がりを絶たれることへの根源的恐怖" },
+  { w:"停滞",  en:"STAGNATION", f:"休息と現状維持",         b:"変化に伴う痛みを極端に恐れる精神的硬直" },
+  { w:"虚無",  en:"VOID",       f:"達観と受容",             b:"すべてが徒労に終わることへの諦めと防衛" },
+  { w:"裏切り",en:"BETRAYAL",   f:"警戒心の維持",           b:"先に自分が裏切ることで傷を最小限にする計算" },
+  { w:"束縛",  en:"BINDING",    f:"制限への反発",           b:"誰かに縛られていたいという歪んだ被保護欲求" },
+  { w:"喪失",  en:"LOSS",       f:"悲しみの予感",           b:"失う前に自ら壊してしまいたい自暴自棄な執着" },
+  { w:"性欲",  en:"DESIRE",     f:"生命力と根源的衝動",     b:"愛情に飢えた自己を肉体的な接触で埋めようとする代替行動" },
+  { w:"依存",  en:"DEPEND",     f:"他者との繋がり",         b:"自分一人では存在を維持できない精神的寄生" },
+  { w:"崩壊",  en:"COLLAPSE",   f:"秩序の再構築",           b:"すべてをゼロに戻し責任から逃れたい衝動" },
+  { w:"嫉妬",  en:"ENVY",       f:"対抗心と羨望",           b:"手に入らないものを呪うことで自分を守る防衛" },
+  { w:"忘却",  en:"OBLIVION",   f:"記憶の浄化",             b:"直視できない過去からの永久的な逃亡願望" },
+  { w:"静止",  en:"STILLNESS",  f:"永遠への憧憬",           b:"未来への期待の完全な消失" },
+  { w:"覚醒",  en:"AWAKENING",  f:"新たな自分への更新",     b:"現在の自分を偽物と定義する強い自己否定" },
+  { w:"決別",  en:"FAREWELL",   f:"健全な境界線",           b:"憎しみすら残さないほどの冷徹な関係断絶" },
+  { w:"原点",  en:"ORIGIN",     f:"自己の再発見",           b:"成長の限界を感じて過去の栄光に縋る退行" },
+  { w:"超越",  en:"TRANSCEND",  f:"限界の突破",             b:"人間らしい泥臭い感情を捨て去りたい脱人間化" },
+  { w:"開錠",  en:"UNLOCK",     f:"真実の探究",             b:"暴いてはいけない内面への禁断の好奇心" },
+  { w:"再生",  en:"REBIRTH",    f:"失敗からの復活",         b:"死への恐怖の裏返しとしての病的生への執着" },
+  { w:"混沌",  en:"CHAOS",      f:"自由な発想",             b:"秩序による統制への限界と原始的衝動の爆発" },
+  { w:"境界",  en:"BOUNDARY",   f:"適切な距離感",           b:"誰にも踏み込まれたくない絶対的な心の聖域" },
+  { w:"導き",  en:"GUIDANCE",   f:"示唆の希求",             b:"自分の人生の舵取りを任せたいという服従心" },
+  { w:"共鳴",  en:"RESONANCE",  f:"深いシンクロ",           b:"独りではないと思い込みたい究極の同調圧力" },
+  { w:"金",    en:"GOLD",       f:"豊かさと安心の象徴",     b:"価値を数字に換算しなければ自分を保てない強迫" },
+  { w:"使命",  en:"MISSION",    f:"社会的責任",             b:"自分の存在意義を義務にすり替える自己犠牲" },
 ];
 
 const ARCHETYPES = [
-  { code:"VOID-Ω", name:"無限回帰者",  desc:"自己消滅と再生の間を永続的に往復する。崩壊を恐れながら同時に渇望する二律背反の魂。" },
-  { code:"APEX-Σ", name:"頂点侵食者",  desc:"外界への征服衝動と、それを支える内的空白が共鳴する。強さは補填である。" },
-  { code:"ECHO-Λ", name:"反響体",      desc:"他者の感情を鏡のように反射し続け、自己の輪郭が溶けかかっている。" },
-  { code:"VEIL-Δ", name:"遮蔽者",      desc:"幾重もの防衛層が内面へのアクセスを拒絶する。開口は恐怖と同義だ。" },
-  { code:"FLUX-Ψ", name:"流動体",      desc:"自己同一性の不安定さと高い環境適応性が共存する。形を持たないことが戦略である。" },
-  { code:"CORE-Φ", name:"核心保持者",  desc:"外圧に揺らがない内的基準を持つ。その堅固さが孤立を生む。" },
-  { code:"RIFT-Χ", name:"断裂者",      desc:"過去と現在の自己の間に修復不能な亀裂がある。継続性の幻想を棄てている。" },
-  { code:"NODE-Π", name:"結節点",      desc:"関係性の中心に立ちながら誰とも深く繋がれない。すべての線が自分を素通りする。" },
+  { code:"VOID-Ω",  name:"無限回帰者",   desc:"自己消滅と再生の間を永続的に往復する。崩壊を恐れながら同時に渇望する二律背反の魂。" },
+  { code:"APEX-Σ",  name:"頂点侵食者",   desc:"外界への征服衝動と、それを支える内的空白が共鳴する。強さは補填である。" },
+  { code:"ECHO-Λ",  name:"反響体",       desc:"他者の感情を鏡のように反射し続け、自己の輪郭が溶けかかっている。" },
+  { code:"VEIL-Δ",  name:"遮蔽者",       desc:"幾重もの防衛層が内面へのアクセスを拒絶する。開口は恐怖と同義だ。" },
+  { code:"FLUX-Ψ",  name:"流動体",       desc:"自己同一性の不安定さと高い環境適応性が共存する。形を持たないことが戦略である。" },
+  { code:"CORE-Φ",  name:"核心保持者",   desc:"外圧に揺らがない内的基準を持つ。その堅固さが孤立を生む。" },
+  { code:"RIFT-Χ",  name:"断裂者",       desc:"過去と現在の自己の間に修復不能な亀裂がある。継続性の幻想を棄てている。" },
+  { code:"NODE-Π",  name:"結節点",       desc:"関係性の中心に立ちながら誰とも深く繋がれない。すべての線が自分を素通りする。" },
+  { code:"NOVA-Γ",  name:"爆発前夜",     desc:"内側に蓄積されたエネルギーが臨界に達しつつある。静寂は嵐の前兆だ。" },
+  { code:"SCAR-Θ",  name:"傷跡の語り部", desc:"過去の痛みを消さずに抱えて歩く。それがアイデンティティの芯になっている。" },
+  { code:"MASK-Ξ",  name:"仮面の設計者", desc:"外側に見せる顔を緻密に構築する。本当の顔を知る者は誰もいない。" },
+  { code:"DUST-Β",  name:"散逸体",       desc:"自己の輪郭が定まらず、風に吹かれるように方向を変え続ける。それが自由か喪失かは本人にもわからない。" },
+  { code:"ROOT-Η",  name:"深根者",       desc:"地中深くに根を張り動かない。その安定の裏に、変化への根源的な拒絶がある。" },
+  { code:"TWIN-Μ",  name:"分裂した統一体",desc:"相反する二つの自己が同居している。どちらが本物かを問うことをやめた時、答えが出る。" },
+  { code:"HUNT-Ν",  name:"追跡者",       desc:"何かを常に追い続けることで自分の存在を確認する。手に入れた瞬間に次の獲物を探す。" },
+  { code:"GATE-Ο",  name:"門番",         desc:"自分の内側への入口を厳重に管理する。招かれざる者は誰も通さない。" },
+  { code:"TIDE-Ρ",  name:"潮汐者",       desc:"感情の満ち引きが激しく、自分でも制御できない周期がある。月に引かれた海のように。" },
+  { code:"WIRE-Τ",  name:"接続渇望者",   desc:"誰かと深く繋がりたいという衝動と、繋がることへの恐怖が同時に存在する。" },
+  { code:"ASH-Υ",   name:"灰の再生者",   desc:"すべてを燃やし尽くした後に残るものだけを信じる。破壊は再生の儀式だ。" },
+  { code:"LENS-Ζ",  name:"観測者",       desc:"自分を含むすべてを客観視する癖がある。感情の渦中にいながら同時に外から眺めている。" },
+  { code:"ZERO-Κ",  name:"原点回帰者",   desc:"すべてをゼロから問い直さずにはいられない。積み上げたものを自ら崩す衝動が定期的に訪れる。" },
 ];
 
 const BOOT_LOG = [
@@ -1266,7 +1296,7 @@ function renderPage(idx) {
   pages[idx].forEach(c => {
     const div = document.createElement('div');
     div.className = 'wc';
-    div.textContent = c.w;
+    div.innerHTML = `<div class="wc-kanji">${c.w}</div><div class="wc-en">${c.en}</div>`;
     div.style.setProperty('--fd', rand(3, 5.5) + 's');
     div.style.setProperty('--dd', (-rand(0, 4)) + 's');
     grid.appendChild(div);
@@ -1510,31 +1540,6 @@ function showResult(primaryW, suppressedW) {
       この注視パターンは統計的に上位 ${pct_rare}% の被験者のみが示す、特異な潜在意識構造を示唆している。
     </div>
 
-    <div class="cta-box">
-      <div class="cta-lbl">// FULL PROFILING REPORT AVAILABLE</div>
-      <div class="cta-txt">
-        あなたのアーキタイプ <strong>${archetype.code}</strong> を含む
-        <strong>21の属性タイプ</strong>の完全解説と、<br>
-        注視パターンが示す<strong>深層構造の全貌</strong>を有料レポートで開示します。<br><br>
-        <em>※ このセッションデータは閲覧終了後に自動消去されます</em>
-      </div>
-      <a class="cta-btn" href="#" onclick="return false;">
-        UNLOCK FULL REPORT — ${NOTE_PRICE}
-      </a>
-    </div>
-
-    <button class="retry-btn" onclick="retryAll()">[ RE-ANALYZE — 再スキャン ]</button>
-
-    <div class="share-row">
-      <button class="share-btn share-x" onclick="shareX()">𝕏 でシェア</button>
-      <button class="share-btn share-copy" onclick="copyURL()">URL コピー</button>
-    </div>
-    <div class="share-copied" id="copy-msg">COPIED ✓</div>
-
-    <div class="ent-notice">
-      ※ 本コンテンツはエンターテインメントです。科学的根拠に基づくものではありません。
-    </div>
-
     <!-- ============ POST-RESULT LP ============ -->
     <div class="lp-wrap">
 
@@ -1691,6 +1696,20 @@ function showResult(primaryW, suppressedW) {
         オレンジ仮面
       </div>
 
+      <!-- シェア -->
+      <div class="lp-block" style="border-top:none; padding-top:8px;">
+        <div class="share-row">
+          <button class="share-btn share-x" onclick="shareX()">𝕏 でシェア</button>
+          <button class="share-btn share-line" onclick="shareLINE()">LINE でシェア</button>
+          <button class="share-btn share-copy" onclick="copyURL()">URL コピー</button>
+        </div>
+        <div class="share-copied" id="copy-msg">COPIED ✓</div>
+        <div class="ent-notice">
+          ※ 本コンテンツはエンターテインメントです。科学的根拠に基づくものではありません。
+        </div>
+        <button class="retry-btn" onclick="retryAll()">[ RE-ANALYZE — 再スキャン ]</button>
+      </div>
+
     </div><!-- /lp-wrap -->
   `;
 
@@ -1720,6 +1739,14 @@ function animateCompat(target) {
 // ============================================================
 // SHARE
 // ============================================================
+function shareLINE() {
+  const r = window._lastResult;
+  if (!r) return;
+  const txt = `🧠 NEURAL DIVE — 潜在意識解析完了\n\nアーキタイプ: ${r.archetype.code}「${r.archetype.name}」\n無意識に求めた言葉: ${r.primaryW.join(' / ')}\n無意識に避けた言葉: ${r.suppressedW.join(' / ')}\n\nあなたの潜在意識は何を隠している？\n${location.href}`;
+  const url = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(location.href) + '&text=' + encodeURIComponent(txt);
+  window.open(url, '_blank', 'noopener');
+}
+
 function shareX() {
   const r = window._lastResult;
   if (!r) return;
