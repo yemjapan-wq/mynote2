@@ -481,22 +481,25 @@ body::before {
 /* 区切り線 */
 .lp-divider {
   text-align: center;
-  padding: 48px 0 36px;
+  padding: 56px 0 44px;
   position: relative;
 }
 .lp-divider::before {
   content: '';
   display: block;
   width: 1px;
-  height: 48px;
-  background: linear-gradient(to bottom, transparent, rgba(0,245,255,.3));
-  margin: 0 auto 24px;
+  height: 56px;
+  background: linear-gradient(to bottom, transparent, rgba(0,245,255,.5));
+  margin: 0 auto 32px;
 }
 .lp-divider-txt {
-  font-size: clamp(8px,1.8vw,10px);
-  letter-spacing: .55em;
+  font-size: clamp(18px,5vw,28px);
+  font-weight: 900;
+  letter-spacing: .15em;
   color: var(--b);
-  text-shadow: 0 0 8px var(--b);
+  text-shadow: 0 0 20px var(--b), 0 0 50px rgba(0,245,255,.4);
+  line-height: 1.6;
+  animation: flicker 6s ease-in-out infinite;
 }
 
 /* ブロック共通 */
@@ -1559,7 +1562,7 @@ function showResult(primaryW, suppressedW) {
 
       <!-- 区切り -->
       <div class="lp-divider">
-        <div class="lp-divider-txt">── なぜ、この瞳があなたを選んだのか ──</div>
+        <div class="lp-divider-txt">なぜ、この瞳が<br>あなたを選んだのか</div>
       </div>
 
       <!-- ブロック1 -->
