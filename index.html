@@ -1372,12 +1372,12 @@ function showResult(primaryW, suppressedW) {
     </div>
 
     <div class="r-section">
-      <div class="r-stitle">// PRIMARY ATTENTION FACTORS — 優位注視概念</div>
+      <div class="r-stitle">// 無意識に求めた言葉</div>
       ${pData.map((d,i) => fitem(d,i,false)).join('')}
     </div>
 
     <div class="r-section r-sup">
-      <div class="r-stitle">// SUPPRESSED FACTORS — 回避・抑圧概念</div>
+      <div class="r-stitle">// 無意識に避けた言葉</div>
       ${sData.map((d,i) => fitem(d,i,true)).join('')}
     </div>
 
@@ -1448,7 +1448,7 @@ function animateCompat(target) {
 function shareX() {
   const r = window._lastResult;
   if (!r) return;
-  const txt = `🧠 NEURAL DIVE — 潜在意識解析完了\n\nアーキタイプ: ${r.archetype.code}「${r.archetype.name}」\n優位注視: ${r.primaryW.join(' / ')}\n抑圧概念: ${r.suppressedW.join(' / ')}\n適合率: ${r.compat}%\n\nあなたの潜在意識は何を隠している？\n👁 ${location.href}\n\n#NEURALDIVE #潜在意識 #心理分析`;
+  const txt = `🧠 NEURAL DIVE — 潜在意識解析完了\n\nアーキタイプ: ${r.archetype.code}「${r.archetype.name}」\n無意識に求めた言葉: ${r.primaryW.join(' / ')}\n無意識に避けた言葉: ${r.suppressedW.join(' / ')}\n適合率: ${r.compat}%\n\nあなたの潜在意識は何を隠している？\n👁 ${location.href}\n\n#NEURALDIVE #潜在意識 #心理分析`;
   const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt);
   window.open(url, '_blank', 'noopener');
 }
