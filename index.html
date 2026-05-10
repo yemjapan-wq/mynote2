@@ -447,8 +447,135 @@ body::before {
 .retry-btn:hover { color: #444; border-color: #333; }
 
 /* ============================================================
-   KEYFRAMES
+   DISCLAIMER SCREEN
 ============================================================ */
+#screen-disclaimer {
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6vw;
+  gap: 0;
+}
+.disc-logo {
+  font-size: clamp(11px,2.5vw,14px);
+  letter-spacing: .5em;
+  color: var(--b);
+  text-shadow: 0 0 8px var(--b);
+  margin-bottom: 36px;
+}
+.disc-body {
+  width: min(92vw,480px);
+  text-align: center;
+}
+.disc-eyeicon {
+  font-size: 48px;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 12px var(--b));
+  animation: flicker 6s ease-in-out infinite;
+}
+.disc-main {
+  font-size: clamp(15px,4vw,20px);
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  letter-spacing: .04em;
+}
+.disc-main em {
+  color: var(--b);
+  font-style: normal;
+  text-shadow: 0 0 8px var(--b);
+}
+.disc-instruct {
+  font-size: clamp(12px,3vw,15px);
+  color: #cccccc;
+  line-height: 1.9;
+  margin-bottom: 28px;
+  letter-spacing: .03em;
+}
+.disc-notice {
+  font-size: clamp(9px,2.2vw,11px);
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 36px;
+  padding: 14px;
+  border: 1px solid #1a1a1a;
+  letter-spacing: .03em;
+}
+.disc-notice strong { color: #888; }
+#disc-start-btn {
+  padding: 15px 52px;
+  background: transparent;
+  border: 1px solid var(--p);
+  color: var(--p);
+  font-family: inherit;
+  font-size: clamp(12px,3vw,16px);
+  letter-spacing: .35em;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--p);
+  box-shadow: 0 0 16px rgba(255,45,120,.2);
+  transition: all .3s;
+}
+#disc-start-btn:hover {
+  background: rgba(255,45,120,.08);
+  box-shadow: 0 0 30px var(--p);
+}
+
+/* ============================================================
+   SHARE BUTTONS
+============================================================ */
+.share-row {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0 8px;
+}
+.share-btn {
+  flex: 1;
+  padding: 13px 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: clamp(10px,2.5vw,13px);
+  letter-spacing: .15em;
+  cursor: pointer;
+  transition: all .3s;
+}
+.share-x {
+  border: 1px solid #ffffff;
+  color: #ffffff;
+}
+.share-x:hover { background: rgba(255,255,255,.08); }
+.share-copy {
+  border: 1px solid var(--c);
+  color: var(--c);
+  text-shadow: 0 0 6px var(--c);
+}
+.share-copy:hover { background: rgba(0,255,65,.08); }
+.share-copied {
+  text-align: center;
+  font-size: clamp(9px,2vw,11px);
+  color: var(--c);
+  letter-spacing: .3em;
+  height: 16px;
+  margin-bottom: 8px;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.share-copied.show { opacity: 1; }
+
+/* result entertainment notice */
+.ent-notice {
+  font-size: clamp(9px,2.2vw,11px);
+  color: #444;
+  text-align: center;
+  letter-spacing: .08em;
+  line-height: 1.8;
+  padding: 12px 0 4px;
+  border-top: 1px solid #0f0f0f;
+  margin-top: 8px;
+}
+
+
 @keyframes flicker {
   0%,93%,100%{ opacity:1; }
   94%{ opacity:.3; }
@@ -481,7 +608,32 @@ body::before {
   <div class="boot-logo">NEURAL DIVE</div>
   <div class="boot-sub">SUBCONSCIOUS PROFILING ENGINE · v4.2.1</div>
   <div class="boot-log" id="boot-log"></div>
-  <button id="boot-btn" onclick="startScan()">INITIALIZE SCAN</button>
+  <button id="boot-btn" onclick="showDisclaimer()">INITIALIZE SCAN</button>
+</div>
+
+<!-- ===== DISCLAIMER ===== -->
+<div id="screen-disclaimer" class="screen">
+  <div class="disc-logo">NEURAL DIVE · PRE-SCAN BRIEFING</div>
+  <div class="disc-body">
+    <div class="disc-eyeicon">👁</div>
+    <div class="disc-main">
+      生まれ持った<em>瞳</em>をスキャンし<br>
+      あなたの潜在意識を測定します。
+    </div>
+    <div class="disc-instruct">
+      瞳スキャン後、さまざまな文字が画面に出現します。<br>
+      <strong style="color:#fff">画面から目を逸らさず、自然に見続けてください。</strong><br>
+      あなたの視線が潜在意識の地図を描きます。
+    </div>
+    <div class="disc-notice">
+      <strong>⚠ 重要なお知らせ</strong><br>
+      本システムはエンターテインメントです。<br>
+      科学的根拠に基づくものではございません。<br>
+      得られた結果は心理的プロファイリングの<br>
+      参考情報としてお楽しみください。
+    </div>
+    <button id="disc-start-btn" onclick="startScan()">SCAN START</button>
+  </div>
 </div>
 
 <!-- ===== SCAN ===== -->
@@ -667,6 +819,10 @@ function runBoot() {
     const btn = document.getElementById('boot-btn');
     btn.classList.add('visible');
   }, delay + 300);
+}
+
+function showDisclaimer() {
+  showScreen('screen-disclaimer');
 }
 
 // ============================================================
@@ -1251,11 +1407,24 @@ function showResult(primaryW, suppressedW) {
     </div>
 
     <button class="retry-btn" onclick="retryAll()">[ RE-ANALYZE — 再スキャン ]</button>
+
+    <div class="share-row">
+      <button class="share-btn share-x" onclick="shareX()">𝕏 でシェア</button>
+      <button class="share-btn share-copy" onclick="copyURL()">URL コピー</button>
+    </div>
+    <div class="share-copied" id="copy-msg">COPIED ✓</div>
+
+    <div class="ent-notice">
+      ※ 本コンテンツはエンターテインメントです。科学的根拠に基づくものではありません。
+    </div>
   `;
 
   document.getElementById('rc').innerHTML = html;
   showScreen('screen-result');
   document.getElementById('screen-result').scrollTop = 0;
+
+  // Store for sharing
+  window._lastResult = { archetype, primaryW, suppressedW, compat };
 
   // Count-up animation for compat number
   animateCompat(compat);
@@ -1271,6 +1440,41 @@ function animateCompat(target) {
     if (cur < target) requestAnimationFrame(step);
   };
   setTimeout(step, 400);
+}
+
+// ============================================================
+// SHARE
+// ============================================================
+function shareX() {
+  const r = window._lastResult;
+  if (!r) return;
+  const txt = `🧠 NEURAL DIVE — 潜在意識解析完了\n\nアーキタイプ: ${r.archetype.code}「${r.archetype.name}」\n優位注視: ${r.primaryW.join(' / ')}\n抑圧概念: ${r.suppressedW.join(' / ')}\n適合率: ${r.compat}%\n\nあなたの潜在意識は何を隠している？\n👁 ${location.href}\n\n#NEURALDIVE #潜在意識 #心理分析`;
+  const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt);
+  window.open(url, '_blank', 'noopener');
+}
+
+function copyURL() {
+  const url = location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showCopied());
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showCopied(); } catch {}
+    document.body.removeChild(ta);
+  }
+}
+
+function showCopied() {
+  const el = document.getElementById('copy-msg');
+  if (!el) return;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
 }
 
 // ============================================================
